@@ -54,9 +54,9 @@ addons = [
     'angry-assignments'
 ]
 
-game_version = '1738749986%3A517'
-base_url = 'https://www.curseforge.com'
 addon_dir = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retail_/Interface/AddOns/'
+game_version = '1738749986%3A517'  # the code to filter the latest files page for retail addons
+base_url = 'https://www.curseforge.com'
 cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
 last_update_timestamps_file = pjoin(cache_dir, 'update-history.json')
 
