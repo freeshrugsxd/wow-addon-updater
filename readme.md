@@ -7,7 +7,7 @@ A script to update all my addons with a single command.
 As of now, the script
 * needs a hardcoded list of the addons you want to keep up-to-date
 * needs the hardcoded path to the game's addon folder
-* saves the last time of the last update it did to a JSON file in a cache folder
+* saves the time of the last update it did to a JSON file in a cache folder
 * saves the downloaded zip files in a cache folder (they are currently not deleted but this will
     definitely change)
 * scrapes relevant information from Curseforge using requests and bs4 (because I'm an idiot and
