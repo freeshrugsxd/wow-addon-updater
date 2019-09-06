@@ -49,7 +49,7 @@ addon = [
 ]
 ```
 
-that you only need to specify the path to your AddOn directory
+After that you only need to specify the path to your AddOn directory
 [here](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L57) and call the script like this: 
 
 ```
