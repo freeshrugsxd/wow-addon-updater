@@ -1,6 +1,8 @@
 # wow addon update script
 A script to update all my addons with a single command.
 
+<center><img src="https://i.imgur.com/XEYQ2I1.gif"></center>
+
 ## what it does
 As of now, the script
 * needs a hardcoded list of the addons you want to keep up-to-date
@@ -26,7 +28,7 @@ $ pip3 install --user bs4 requests colorama tqdm
 ```
 
 ### addon names
-The name of an addon is currently its project name from its Curseforge URL.
+The name of an addon is currently the project name from its Curseforge URL.
 If you want an addon to be tracked and updated, you have to look it up on 
 Curseforge and copy the last part of the project url. You paste this as a string into the `addon` list at the [beginning of the file](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L13) as a String.
 
