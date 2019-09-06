@@ -21,8 +21,8 @@ As of now, the script
 
 ## what you need
 ### requirements
-This requires at least python 3.6 (because f-strings) to run and depends on the packages `bs4`, `requests`, `colorama`
-and `tqdm`. So either install these via your package manager or do a quick
+This requires at least python 3.6 (because f-strings) to run and depends on the packages [`bs4`](https://www.crummy.com/software/BeautifulSoup/), [`requests`](https://2.python-requests.org/en/master/), [`colorama`](https://github.com/tartley/colorama)
+and [`tqdm`](https://tqdm.github.io/). So either install these via your package manager or do a quick
 ```
 $ pip3 install --user bs4 requests colorama tqdm
 ```
