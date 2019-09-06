@@ -58,16 +58,20 @@ addon_dir = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retai
 game_version = '1738749986%3A517'  # the code to filter the latest files page for retail addons
 base_url = 'https://www.curseforge.com'
 cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
-last_update_timestamps_file = pjoin(cache_dir, 'update-history.json')
+update_cache = pjoin(cache_dir, 'addon_updates.json')
 
 if not isdir(cache_dir):
     mkdir(cache_dir)
 
-if not isfile(last_update_timestamps_file):
-    with open(last_update_timestamps_file, 'w') as f:
+if not isfile(update_cache):
+    with open(update_cache, 'w') as f:
         f.write(json.dumps({addon: 0 for addon in addons}))
 
-last_update = Manager().dict(json.load(open(last_update_timestamps_file)))
+updateable = Manager().dict({})
+size = Value(c_float)
+updated = Value(c_int)
+
+last_update = Manager().dict(json.load(open(update_cache)))
 last_update_len = len(last_update)
 addons_len = len(addons)
 
@@ -80,10 +84,6 @@ if last_update_len != addons_len:
         for addon in list(set(addons) - set(on_disk)):
             if addon not in on_disk:
                 last_update[addon] = 0
-
-updateable = Manager().dict({})
-size = Value(c_float)
-updated = Value(c_int)
 
 
 def find_update(addon_name):
@@ -119,7 +119,7 @@ def update_addon(addon_name):
                 f.write(zip_file.content)
                 break
 
-    ZipFile(out_path).extractall(addon_dir)  # extract file content to addon folder
+    ZipFile(out_path).extractall(addon_dir)
     last_update[addon_name] = addon_start
     zip_size = getsize(out_path) / 1024 / 1024
     size.value += zip_size
@@ -146,7 +146,7 @@ def main():
               f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
 
     else:
-        print(f'{Style.BRIGHT}{Fore.BLUE}::{Fore.RESET}'
+        print(f'{Style.BRIGHT}{Fore.CYAN}=>{Fore.RESET}'
               f' Updating {Fore.YELLOW}{updateable_len if updateable_len > 1 else ""}'
               f'{Fore.RESET}{" addons" if updateable_len > 1 else "addon"}:{Style.RESET_ALL}'
               f'{Fore.LIGHTGREEN_EX}', ' '.join(sorted(updateable.keys())), Fore.RESET, '\n')
@@ -159,7 +159,7 @@ def main():
                 pass
 
         # write updated timestamps to disk
-        with open(last_update_timestamps_file, 'w') as fn:
+        with open(update_cache, 'w') as fn:
             json.dump(dict(last_update), fn)
 
         print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(size.value, ndigits=2)}MB')
