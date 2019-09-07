@@ -40,7 +40,7 @@ The project url is probably going to be something like `.../wow/addons/this-addo
 going to copy `this-addon` and save it [inside the script](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L13) like this:
 
 ```python
-addon = [
+addons = [
     'this-addon',
     'the-other-addon',
     'thirdaddon',
