@@ -1,16 +1,17 @@
-from bs4 import BeautifulSoup as bs
-from ctypes import c_float, c_int
-from colorama import init, deinit, Fore, Style
-from multiprocessing import Manager, Pool, Value
-from os import mkdir, cpu_count
-from os.path import expanduser, getsize, isfile, isdir, join as pjoin
-from requests import get
-from time import time
-from tqdm import tqdm
-from zipfile import ZipFile
 import json
+from ctypes import c_float, c_int
+from multiprocessing import Manager, Pool, Value
+from os import cpu_count, mkdir
+from os.path import expanduser, getsize, isdir, isfile, join as pjoin
+from time import time
+from zipfile import ZipFile
 
-addons = [
+from colorama import Fore, Style, deinit, init
+from requests import get
+from tqdm import tqdm
+from bs4 import BeautifulSoup as bs
+
+ADDONS = [
     'advancedinterfaceoptions',
     'advanced-tooltips',
     'azeritepowerweights',
@@ -54,40 +55,40 @@ addons = [
     'angry-assignments'
 ]
 
-addon_dir = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retail_/Interface/AddOns/'
-game_version = '1738749986%3A517'  # the code to filter the latest files page for retail addons
-base_url = 'https://www.curseforge.com'
-cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
-update_cache = pjoin(cache_dir, 'addon_updates.json')
+ADDON_DIR = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retail_/Interface/AddOns/'
+GAME_VERSION = '1738749986%3A517'  # the code to filter the latest files page for retail addons
+BASE_URL = 'https://www.curseforge.com'
+CACHE_DIR = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
+UPDATE_CACHE = pjoin(CACHE_DIR, 'addon_updates.json')
 
-if not isdir(cache_dir):
-    mkdir(cache_dir)
+if not isdir(CACHE_DIR):
+    mkdir(CACHE_DIR)
 
-if not isfile(update_cache):
-    with open(update_cache, 'w') as f:
-        f.write(json.dumps({addon: 0 for addon in addons}))
+if not isfile(UPDATE_CACHE):
+    with open(UPDATE_CACHE, 'w') as f:
+        f.write(json.dumps({addon: 0 for addon in ADDONS}))
 
-updateable = Manager().dict({})
-size = Value(c_float)
-updated = Value(c_int)
+UPDATEABLE = Manager().dict({})
+SIZE = Value(c_float)
+UPDATED = Value(c_int)
 
-last_update = Manager().dict(json.load(open(update_cache)))
-last_update_len = len(last_update)
-addons_len = len(addons)
+LAST_UPDATE = Manager().dict(json.load(open(UPDATE_CACHE)))
+LAST_UPDATE_LEN = len(LAST_UPDATE)
+ADDONS_LEN = len(ADDONS)
 
-if last_update_len != addons_len:
-    on_disk = last_update.keys()
-    if last_update_len > addons_len:
-        for addon in list(set(on_disk) - set(addons)):
-            del last_update[addon]
-    elif last_update_len < addons_len:
-        for addon in list(set(addons) - set(on_disk)):
+if LAST_UPDATE_LEN != ADDONS_LEN:
+    on_disk = LAST_UPDATE.keys()
+    if LAST_UPDATE_LEN > ADDONS_LEN:
+        for addon in list(set(on_disk) - set(ADDONS)):
+            del LAST_UPDATE[addon]
+    elif LAST_UPDATE_LEN < ADDONS_LEN:
+        for addon in list(set(ADDONS) - set(on_disk)):
             if addon not in on_disk:
-                last_update[addon] = 0
+                LAST_UPDATE[addon] = 0
 
 
 def find_update(addon_name):
-    r = get(f'{base_url}/wow/addons/{addon_name}/files/all?filter-game-version={game_version}')
+    r = get(f'{BASE_URL}/wow/addons/{addon_name}/files/all?filter-game-version={GAME_VERSION}')
     soup = bs(r.text, 'html.parser')
     rows = soup.find_all('tr')
 
@@ -96,33 +97,33 @@ def find_update(addon_name):
         release_type = cols[0].text
         if 'R' in release_type:
             last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
-            if last_update_curse > last_update[addon_name]:
+            if last_update_curse > LAST_UPDATE[addon_name]:
                 file_url = cols[1].find('a')['href']
-                updateable[addon_name] = file_url
+                UPDATEABLE[addon_name] = file_url
                 break
 
 
 def update_addon(addon_name):
 
-    file_url = updateable[addon_name]
+    file_url = UPDATEABLE[addon_name]
     addon_start = time()
-    out_path = pjoin(cache_dir, f'{addon_name}_latest.zip')
-    r = get(f'{base_url}{file_url}')
+    out_path = pjoin(CACHE_DIR, f'{addon_name}_latest.zip')
+    r = get(f'{BASE_URL}{file_url}')
     soup = bs(r.text, 'html.parser')
     a_tag_buttons = soup.find_all('a', {'class': 'button button--hollow'})
 
     for a_tag in a_tag_buttons:
         url = a_tag.get('href')
         if url.startswith(f'/wow/addons/{addon_name}/download/'):
-            zip_file = get(f'{base_url}{url}/file')
+            zip_file = get(f'{BASE_URL}{url}/file')
             with open(out_path, 'wb') as f:
                 f.write(zip_file.content)
                 break
 
-    ZipFile(out_path).extractall(addon_dir)
-    last_update[addon_name] = addon_start
+    ZipFile(out_path).extractall(ADDON_DIR)
+    LAST_UPDATE[addon_name] = addon_start
     zip_size = getsize(out_path) / 1024 / 1024
-    size.value += zip_size
+    SIZE.value += zip_size
 
 
 def main():
@@ -130,16 +131,17 @@ def main():
 
     init()
     start = time()
+    # spinner = itertools.cycle(['⠦', '⠶', '⠲', '⠴'])
     print(f'{Style.BRIGHT}{Fore.BLUE}::{Fore.RESET}'
-          f' Checking for latest versions of {Fore.YELLOW}{addons_len}'
-          f'{Fore.RESET} {"addons" if addons_len > 1 else "addon"}.{Style.RESET_ALL}\n')
+          f' Checking for latest versions of {Fore.YELLOW}{ADDONS_LEN}'
+          f'{Fore.RESET} {"addons" if ADDONS_LEN > 1 else "addon"}.{Style.RESET_ALL}\n')
 
     # check for lates versions
     with Pool(num_workers) as p:
-        p.map(find_update, addons)
+        p.map(find_update, ADDONS)
 
     # find_update populates updateable
-    updateable_len = len(updateable)
+    updateable_len = len(UPDATEABLE)
 
     if updateable_len == 0:
         print(f'{Fore.CYAN}=>{Fore.RESET} All addons are up-to-date! '
@@ -149,20 +151,20 @@ def main():
         print(f'{Style.BRIGHT}{Fore.CYAN}=>{Fore.RESET}'
               f' Updating {Fore.YELLOW}{updateable_len if updateable_len > 1 else ""}'
               f'{Fore.RESET}{" addons" if updateable_len > 1 else "addon"}:{Style.RESET_ALL}'
-              f'{Fore.LIGHTGREEN_EX}', ' '.join(sorted(updateable.keys())), Fore.RESET, '\n')
+              f'{Fore.LIGHTGREEN_EX}', ' '.join(sorted(UPDATEABLE.keys())), Fore.RESET, '\n')
 
         tqdm.get_lock()  # ensures locks exist
 
         # update out-of-date addons
         with Pool(num_workers) as p:
-            for _ in tqdm(p.imap_unordered(update_addon, updateable), total=updateable_len):
+            for _ in tqdm(p.imap_unordered(update_addon, UPDATEABLE), total=updateable_len):
                 pass
 
         # write updated timestamps to disk
-        with open(update_cache, 'w') as fn:
-            json.dump(dict(last_update), fn)
+        with open(UPDATE_CACHE, 'w') as fn:
+            json.dump(dict(LAST_UPDATE), fn)
 
-        print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(size.value, ndigits=2)}MB')
+        print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(SIZE.value, ndigits=2)}MB')
 
     deinit()
 
