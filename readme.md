@@ -7,7 +7,7 @@ A script to update all my addons with a single command.
 As of now, the script
 * needs a hardcoded list of the addons you want to keep up-to-date
 * needs the hardcoded path to the game's addon folder
-* saves the last time of the last update it did to a JSON file in a cache folder
+* saves the time of the last update it did to a JSON file in a cache folder
 * saves the downloaded zip files in a cache folder (they are currently not deleted but this will
     definitely change)
 * scrapes relevant information from Curseforge using requests and bs4 (because I'm an idiot and
@@ -21,8 +21,8 @@ As of now, the script
 
 ## what you need
 ### requirements
-This requires at least python 3.6 (because f-strings) to run and depends on the packages `bs4`, `requests`, `colorama`
-and `tqdm`. So either install these via your package manager or do a quick
+This requires at least python 3.6 (because f-strings) to run and depends on the packages [`bs4`](https://www.crummy.com/software/BeautifulSoup/), [`requests`](https://2.python-requests.org/en/master/), [`colorama`](https://github.com/tartley/colorama)
+and [`tqdm`](https://tqdm.github.io/). So either install these via your package manager or do a quick
 ```
 $ pip3 install --user bs4 requests colorama tqdm
 ```
@@ -40,7 +40,7 @@ The project url is probably going to be something like `.../wow/addons/this-addo
 going to copy `this-addon` and save it [inside the script](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L13) like this:
 
 ```python
-addon = [
+addons = [
     'this-addon',
     'the-other-addon',
     'thirdaddon',
@@ -49,7 +49,7 @@ addon = [
 ]
 ```
 
-that you only need to specify the path to your AddOn directory
+After that you only need to specify the path to your AddOn directory
 [here](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L57) and call the script like this: 
 
 ```
