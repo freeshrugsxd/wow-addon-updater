@@ -1,6 +1,4 @@
 import json
-import cfscrape
-
 from ctypes import c_float, c_int
 from multiprocessing import Manager, Pool, Value
 from os import cpu_count, mkdir
@@ -8,6 +6,7 @@ from os.path import expanduser, getsize, isdir, isfile, join as pjoin
 from time import time
 from zipfile import ZipFile
 
+import cfscrape
 from colorama import Fore, Style, deinit, init
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
