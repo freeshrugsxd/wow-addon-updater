@@ -1,4 +1,6 @@
 import json
+import cfscrape
+
 from ctypes import c_float, c_int
 from multiprocessing import Manager, Pool, Value
 from os import cpu_count, mkdir
@@ -7,7 +9,6 @@ from time import time
 from zipfile import ZipFile
 
 from colorama import Fore, Style, deinit, init
-from requests import get
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
 
@@ -58,6 +59,7 @@ ADDONS = [
 ADDON_DIR = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retail_/Interface/AddOns/'
 GAME_VERSION = '1738749986%3A517'  # the code to filter the latest files page for retail addons
 BASE_URL = 'https://www.curseforge.com'
+
 CACHE_DIR = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
 UPDATE_CACHE = pjoin(CACHE_DIR, 'addon_updates.json')
 
@@ -71,6 +73,7 @@ if not isfile(UPDATE_CACHE):
 UPDATEABLE = Manager().dict({})
 SIZE = Value(c_float)
 UPDATED = Value(c_int)
+IDX = Value(c_int)
 
 LAST_UPDATE = Manager().dict(json.load(open(UPDATE_CACHE)))
 LAST_UPDATE_LEN = len(LAST_UPDATE)
@@ -88,18 +91,21 @@ if LAST_UPDATE_LEN != ADDONS_LEN:
 
 
 def find_update(addon_name):
-    r = get(f'{BASE_URL}/wow/addons/{addon_name}/files/all?filter-game-version={GAME_VERSION}')
+    cfs = cfscrape.create_scraper()
+    r = cfs.get(f'{BASE_URL}/wow/addons/{addon_name}/files/all?filter-game-version={GAME_VERSION}')
     soup = bs(r.text, 'html.parser')
     rows = soup.find_all('tr')
-
     for row in rows[1:]:
         cols = row.find_all('td')
         release_type = cols[0].text
+
         if 'R' in release_type:
             last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
             if last_update_curse > LAST_UPDATE[addon_name]:
                 file_url = cols[1].find('a')['href']
                 UPDATEABLE[addon_name] = file_url
+                print_looking_for_update(IDX.value)
+                IDX.value += 1
                 break
 
 
@@ -107,15 +113,17 @@ def update_addon(addon_name):
 
     file_url = UPDATEABLE[addon_name]
     addon_start = time()
-    out_path = pjoin(CACHE_DIR, f'{addon_name}_latest.zip')
-    r = get(f'{BASE_URL}{file_url}')
+    out_path = pjoin(CACHE_DIR, f'{addon_name}.zip')
+    cfs = cfscrape.create_scraper()
+    r = cfs.get(f'{BASE_URL}{file_url}')
     soup = bs(r.text, 'html.parser')
     a_tag_buttons = soup.find_all('a', {'class': 'button button--hollow'})
 
     for a_tag in a_tag_buttons:
         url = a_tag.get('href')
         if url.startswith(f'/wow/addons/{addon_name}/download/'):
-            zip_file = get(f'{BASE_URL}{url}/file')
+            cfs = cfscrape.create_scraper()
+            zip_file = cfs.get(f'{BASE_URL}{url}/file')
             with open(out_path, 'wb') as f:
                 f.write(zip_file.content)
                 break
@@ -126,19 +134,26 @@ def update_addon(addon_name):
     SIZE.value += zip_size
 
 
+def print_looking_for_update(idx, last_print=False):
+    anim = ['⠶', '⠦', '⠖', '⠲', '⠴']
+    symbol = anim[idx % len(anim)] if not last_print else '::'
+    eol = ' ' if not last_print else '\n\n'
+    print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
+          f' Checking for latest versions of {Fore.YELLOW}{ADDONS_LEN}'
+          f'{Fore.RESET} {"addons" if ADDONS_LEN > 1 else "addon"}.{Style.RESET_ALL}', end=eol)
+
+
 def main():
     num_workers = cpu_count() * 2
 
     init()
     start = time()
-    # spinner = itertools.cycle(['⠦', '⠶', '⠲', '⠴'])
-    print(f'{Style.BRIGHT}{Fore.BLUE}::{Fore.RESET}'
-          f' Checking for latest versions of {Fore.YELLOW}{ADDONS_LEN}'
-          f'{Fore.RESET} {"addons" if ADDONS_LEN > 1 else "addon"}.{Style.RESET_ALL}\n')
 
     # check for lates versions
     with Pool(num_workers) as p:
         p.map(find_update, ADDONS)
+
+    print_looking_for_update(idx=0, last_print=True)
 
     # find_update populates updateable
     updateable_len = len(UPDATEABLE)
