@@ -94,6 +94,10 @@ def find_update(addon_name):
     r = cfs.get(f'{BASE_URL}/wow/addons/{addon_name}/files/all?filter-game-version={GAME_VERSION}')
     soup = bs(r.text, 'html.parser')
     rows = soup.find_all('tr')
+
+    print_looking_for_update(IDX.value)
+    IDX.value += 1
+
     for row in rows[1:]:
         cols = row.find_all('td')
         release_type = cols[0].text
@@ -103,8 +107,6 @@ def find_update(addon_name):
             if last_update_curse > LAST_UPDATE[addon_name]:
                 file_url = cols[1].find('a')['href']
                 UPDATEABLE[addon_name] = file_url
-                print_looking_for_update(IDX.value)
-                IDX.value += 1
                 break
 
 
