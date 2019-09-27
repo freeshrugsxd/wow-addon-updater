@@ -1,7 +1,7 @@
 # wow addon update script
 A script to update all my addons with a single command.
 
-<center><img src="https://i.imgur.com/XEYQ2I1.gif"></center>
+<center><img src="https://i.imgur.com/F6YleIb.gif"></center>
 
 ## what it does
 As of now, the script

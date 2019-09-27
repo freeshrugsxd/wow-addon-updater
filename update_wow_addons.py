@@ -176,8 +176,8 @@ def main():
                 pass
 
         # write updated timestamps to disk
-        # with open(UPDATE_CACHE, 'w') as fn:
-        #     json.dump(dict(LAST_UPDATE), fn)
+        with open(UPDATE_CACHE, 'w') as fn:
+            json.dump(dict(LAST_UPDATE), fn)
 
         print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(SIZE.value, ndigits=2)}MB')
 
