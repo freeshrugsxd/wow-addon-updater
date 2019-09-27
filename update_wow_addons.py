@@ -101,8 +101,7 @@ def find_update(addon_name):
 
     for row in rows[1:]:
         cols = row.find_all('td')
-        release_type = cols[0].text
-
+        release_type = cols[0].text.strip()
         if release_type in ALLOWED_RELEASE_TYPES:
             last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
             if last_update_curse > LAST_UPDATE[addon_name]:
@@ -177,8 +176,8 @@ def main():
                 pass
 
         # write updated timestamps to disk
-        with open(UPDATE_CACHE, 'w') as fn:
-            json.dump(dict(LAST_UPDATE), fn)
+        # with open(UPDATE_CACHE, 'w') as fn:
+        #     json.dump(dict(LAST_UPDATE), fn)
 
         print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(SIZE.value, ndigits=2)}MB')
 
