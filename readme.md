@@ -28,7 +28,7 @@ $ pip3 install --user bs4 cfscrape colorama tqdm
 ### addon names
 The name of an addon is currently the project name from its Curseforge URL.
 If you want an addon to be tracked and updated, you have to look it up on 
-Curseforge and copy the last part of the project url. You paste this as a string into the `ADDONS` list at the [beginning of the file](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L14444444) as a String.
+Curseforge and copy the last part of the project url. You paste this as a string into the `ADDONS` list at the [beginning of the file](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L14444444).
 
 
 
