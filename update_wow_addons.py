@@ -1,5 +1,4 @@
 import json
-from ctypes import c_float, c_int
 from multiprocessing import Manager, Pool, Value
 from os import cpu_count, mkdir
 from os.path import expanduser, getsize, isdir, isfile, join as pjoin
@@ -59,6 +58,8 @@ ADDON_DIR = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retai
 GAME_VERSION = '1738749986%3A517'  # the code to filter the latest files page for retail addons
 BASE_URL = 'https://www.curseforge.com'
 
+ALLOWED_RELEASE_TYPES = 'RB'  # [R = release, B = beta, A = alpha]
+
 CACHE_DIR = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
 UPDATE_CACHE = pjoin(CACHE_DIR, 'addon_updates.json')
 
@@ -70,22 +71,22 @@ if not isfile(UPDATE_CACHE):
         f.write(json.dumps({addon: 0 for addon in ADDONS}))
 
 UPDATEABLE = Manager().dict({})
-SIZE = Value(c_float)
-UPDATED = Value(c_int)
-IDX = Value(c_int)
+SIZE = Value('d', 0.0)
+UPDATED = Value('i', 0)
+IDX = Value('i', 0)
 
 LAST_UPDATE = Manager().dict(json.load(open(UPDATE_CACHE)))
 LAST_UPDATE_LEN = len(LAST_UPDATE)
 ADDONS_LEN = len(ADDONS)
 
 if LAST_UPDATE_LEN != ADDONS_LEN:
-    on_disk = LAST_UPDATE.keys()
+    ON_DISK = LAST_UPDATE.keys()
     if LAST_UPDATE_LEN > ADDONS_LEN:
-        for addon in list(set(on_disk) - set(ADDONS)):
+        for addon in list(set(ON_DISK) - set(ADDONS)):
             del LAST_UPDATE[addon]
     elif LAST_UPDATE_LEN < ADDONS_LEN:
-        for addon in list(set(ADDONS) - set(on_disk)):
-            if addon not in on_disk:
+        for addon in list(set(ADDONS) - set(ON_DISK)):
+            if addon not in ON_DISK:
                 LAST_UPDATE[addon] = 0
 
 
@@ -102,7 +103,7 @@ def find_update(addon_name):
         cols = row.find_all('td')
         release_type = cols[0].text
 
-        if 'R' in release_type:
+        if release_type in ALLOWED_RELEASE_TYPES:
             last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
             if last_update_curse > LAST_UPDATE[addon_name]:
                 file_url = cols[1].find('a')['href']
@@ -135,10 +136,9 @@ def update_addon(addon_name):
     SIZE.value += zip_size
 
 
-def print_looking_for_update(idx, last_print=False):
+def print_looking_for_update(idx, eol=' '):
     anim = ['⠶', '⠦', '⠖', '⠲', '⠴']
-    symbol = anim[idx % len(anim)] if not last_print else '::'
-    eol = ' ' if not last_print else '\n\n'
+    symbol = anim[int(idx / 2) % len(anim)]
     print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
           f' Checking for latest versions of {Fore.YELLOW}{ADDONS_LEN}'
           f'{Fore.RESET} {"addons" if ADDONS_LEN > 1 else "addon"}.{Style.RESET_ALL}', end=eol)
@@ -154,7 +154,7 @@ def main():
     with Pool(num_workers) as p:
         p.map(find_update, ADDONS)
 
-    print_looking_for_update(idx=0, last_print=True)
+    print_looking_for_update(idx=0, eol='\n\n')
 
     # find_update populates updateable
     updateable_len = len(UPDATEABLE)
