@@ -1,7 +1,7 @@
-import json
+from configparser import ConfigParser
 from multiprocessing import Manager, Pool, Value
 from os import cpu_count, mkdir
-from os.path import expanduser, getsize, isdir, isfile, join as pjoin
+from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from time import time
 from zipfile import ZipFile
 
@@ -10,89 +10,59 @@ from colorama import Fore, Style, deinit, init
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
 
-ADDONS = [
-    'advancedinterfaceoptions',
-    'advanced-tooltips',
-    'azeritepowerweights',
-    'azeritetooltip',
-    'battlegroundenemies',
-    'bigdebuffs',
-    'big-wigs',
-    'blizzmove',
-    'dejacharacterstats',
-    'details',
-    'ealign-updated',
-    'easy-frames',
-    'faster-loot',
-    'gladiatorlossa2',
-    'grid2',
-    'handynotes',
-    'tomcats-tours-mechagon',
-    'immersion',
-    'little-wigs',
-    'map-coords',
-    'method-dungeon-tools',
-    'nameplate-scrolling-combat-text',
-    'omnibar',
-    'omni-cc',
-    'prat-3-0',
-    'premade-filter',
-    'premade-groups-filter',
-    'raiderio',
-    'range-display',
-    'sarena',
-    'scrap',
-    'sexymap',
-    'simulationcraft',
-    'spy',
-    'stat-weight-score',
-    'tidy-plates-threat-plates',
-    'trufigcd',
-    'undermine-journal',
-    'weakauras-2',
-    'world-quest-tracker',
-    'angry-assignments'
-]
+OVERWRITE = False
 
-ADDON_DIR = '/usr/local/games/world-of-warcraft/drive_c/World of Warcraft/_retail_/Interface/AddOns/'
-GAME_VERSION = '1738749986%3A517'  # the code to filter the latest files page for retail addons
-BASE_URL = 'https://www.curseforge.com'
+CONFIG_FILE = pjoin(dirname(__file__), 'update_wow_addons.config')
+if not isfile(CONFIG_FILE):
+    exit(f'Error: Config file \'{CONFIG_FILE}\' not found.')
 
-ALLOWED_RELEASE_TYPES = 'RB'  # [R = release, B = beta, A = alpha]
+CONFIG = ConfigParser(allow_no_value=True, interpolation=None)
+
+with open(CONFIG_FILE, 'r') as f:
+    CONFIG.read_file(f)
+
+GAME_VERSION = CONFIG['settings']['version'].lower()
+if GAME_VERSION not in ['classic', 'retail']:
+    exit(f'Error: Game version \'{GAME_VERSION}\' not recognized. Must be either \'classic\' or \'retail\'.')
+
+GAME_DIR = CONFIG['settings']['game directory']
+if not isdir(GAME_DIR):
+    exit(f'Error: \'{GAME_DIR}\' is not a directory.')
+
+ADDON_DIR = pjoin(GAME_DIR, f'_{GAME_VERSION}_', 'Interface', 'AddOns')
+if not isdir(ADDON_DIR):
+    exit(f'Error: \'{ADDON_DIR}\' is not a directory.')
 
 CACHE_DIR = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
-UPDATE_CACHE = pjoin(CACHE_DIR, 'addon_updates.json')
-
 if not isdir(CACHE_DIR):
     mkdir(CACHE_DIR)
 
-if not isfile(UPDATE_CACHE):
-    with open(UPDATE_CACHE, 'w') as f:
-        f.write(json.dumps({addon: 0 for addon in ADDONS}))
+ADDONS = Manager().dict({})
+
+for name, last_update in CONFIG.items(GAME_VERSION):
+    if last_update is None or OVERWRITE:
+        last_update = 0.0
+    ADDONS[name] = float(last_update)
+
+ADDONS_LEN = len(ADDONS)
+if ADDONS_LEN == 0:
+    exit('Error: Empty addon list.')
+
+# codes to filter the latest files page for specific game version
+GAME_VERSIONS = {'classic': '1738749986%3A67408', 'retail': '1738749986%3A517'}
+GAME_VERSION_FILTER = GAME_VERSIONS[GAME_VERSION]
+ALLOWED_RELEASE_TYPES = 'RB'  # [R = release, B = beta, A = alpha]
+BASE_URL = 'https://www.curseforge.com'
 
 UPDATEABLE = Manager().dict({})
+UPDATED = Manager().dict({})
 SIZE = Value('d', 0.0)
-UPDATED = Value('i', 0)
 IDX = Value('i', 0)
-
-LAST_UPDATE = Manager().dict(json.load(open(UPDATE_CACHE)))
-LAST_UPDATE_LEN = len(LAST_UPDATE)
-ADDONS_LEN = len(ADDONS)
-
-if LAST_UPDATE_LEN != ADDONS_LEN:
-    ON_DISK = LAST_UPDATE.keys()
-    if LAST_UPDATE_LEN > ADDONS_LEN:
-        for addon in list(set(ON_DISK) - set(ADDONS)):
-            del LAST_UPDATE[addon]
-    elif LAST_UPDATE_LEN < ADDONS_LEN:
-        for addon in list(set(ADDONS) - set(ON_DISK)):
-            if addon not in ON_DISK:
-                LAST_UPDATE[addon] = 0
 
 
 def find_update(addon_name):
     cfs = cfscrape.create_scraper()
-    r = cfs.get(f'{BASE_URL}/wow/addons/{addon_name}/files/all?filter-game-version={GAME_VERSION}')
+    r = cfs.get(f'{BASE_URL}/wow/addons/{addon_name}/files/all?filter-game-version={GAME_VERSION_FILTER}')
     soup = bs(r.text, 'html.parser')
     rows = soup.find_all('tr')
 
@@ -104,14 +74,13 @@ def find_update(addon_name):
         release_type = cols[0].text.strip()
         if release_type in ALLOWED_RELEASE_TYPES:
             last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
-            if last_update_curse > LAST_UPDATE[addon_name]:
+            if last_update_curse > ADDONS[addon_name]:
                 file_url = cols[1].find('a')['href']
                 UPDATEABLE[addon_name] = file_url
                 break
 
 
 def update_addon(addon_name):
-
     file_url = UPDATEABLE[addon_name]
     addon_start = time()
     out_path = pjoin(CACHE_DIR, f'{addon_name}.zip')
@@ -130,7 +99,7 @@ def update_addon(addon_name):
                 break
 
     ZipFile(out_path).extractall(ADDON_DIR)
-    LAST_UPDATE[addon_name] = addon_start
+    UPDATED[addon_name] = addon_start
     zip_size = getsize(out_path) / 1024 / 1024
     SIZE.value += zip_size
 
@@ -175,9 +144,11 @@ def main():
             for _ in tqdm(p.imap_unordered(update_addon, UPDATEABLE), total=updateable_len):
                 pass
 
-        # write updated timestamps to disk
-        with open(UPDATE_CACHE, 'w') as fn:
-            json.dump(dict(LAST_UPDATE), fn)
+        for addon_name, timestamp in UPDATED.items():
+            CONFIG[GAME_VERSION][addon_name] = str(timestamp)
+
+        with open(CONFIG_FILE, 'w') as f:
+            CONFIG.write(f)
 
         print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(SIZE.value, ndigits=2)}MB')
 
