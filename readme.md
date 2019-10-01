@@ -73,5 +73,6 @@ and it should just work™.
 * [ ] make code cleaner and more sophisticated i guess?
 * [ ] automatically determine installed addons
 * [x] test if this even works on other machines
-* [ ] maybe make it a full fledged cli application? (using argparse)
+* [ ] maybe make it a full fledged cli application?
 * [x] read and write configuration file(s) instead of hardcoding stuff into the script
+* [ ] add option to always check updates for both game versions 
