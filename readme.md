@@ -5,14 +5,14 @@ A script to update all my addons with a single command.
 
 ## what it does
 As of now, the script
-* saves the time of the last update it did to a JSON file in a cache folder
-* saves the downloaded zip files to a cache folder
+* checks for updates, downloads and extracts files synchronously
+* reads and writes a configuration file
+* saves downloaded files to a cache folder
 * scrapes relevant information from Curseforge using bs4 (because I'm an idiot and
     thats all I could come up with)
 * bypasses cloudflare ddos protection (IUAM) pages 
 * determines available upgrades based on upload time of the latest file on Curseforge
 * only downloads addons for one game flavor (classic or retail)
-* checks for updates, downloads and extracts files synchronously
 
 ## what you need
 ### requirements
@@ -25,41 +25,53 @@ $ pip3 install --user bs4 cfscrape colorama tqdm
 
 `cfscrape` also requires [nodejs](https://nodejs.org/en/) 10 or higher to solve Cloudflare's JavaScript challenges.
 
-### addon names
+### configuration file
+The configuration file must be in the same directory as the script. It [follows the structure
+of INI-files](https://docs.python.org/3/library/configparser.html#supported-ini-file-structure) and
+contains three sections. The path to you game installation folder and the WoW version you want to
+update addons for should go under`[settings]`. Under `[classic]` and `[retail]` you put the
+names of the addons that you want to keep up-to-date. There is one section for each version of the game
+right now. 
+
+#### addon names
 The name of an addon is currently the project name from its Curseforge URL.
 If you want an addon to be tracked and updated, you have to look it up on 
-Curseforge and copy the last part of the project url. You paste this as a string into the `ADDONS` list at the [beginning of the file](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L14444444).
+Curseforge and copy the last part of the project url.
 
+For example, let's say the addon you want to track is called "<i>T.H.I.S. Addon</i>"
+then the project url is probably going to be something like `.../wow/addons/this-addon`.
+Now, we are going to copy `this-addon` and paste it into the configuration file.
 
+#### example configuration
 
-#### example
-The addon you want to track is called "<i>T.H.I.S. Addon</i>".
-The project url is probably going to be something like `.../wow/addons/this-addon` and we are
-going to copy `this-addon` and save it [inside the script](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L14) like this:
+```ini
+[settings]
+version=classic
+game directory=D:/games/World of Warcraft
 
-```python
-ADDONS = [
-    'this-addon',
-    'the-other-addon',
-    'thirdaddon',
-    'addon-nr-4',
-    ...
-]
+[retail]
+details
+big-wigs
+prat-3-0
+weakauras-2
+
+[classic]
+details
+classiccastbars
+classicthreatmeter
+real-mob-health
 ```
 
-After that you only need to specify the path to your AddOn directory
-[here](https://github.com/freeshrugsxd/wow-addon-updater/blob/master/update_wow_addons.py#L58) and call the script like this: 
-
+### execution
+Call the script like
 ```
 $ python3 update_wow_addons.py
 ```
-and it should work.
-
+and it should just work™.
 
 ## to do
 * [ ] make code cleaner and more sophisticated i guess?
-* [ ] stop reliance on scraped information
 * [ ] automatically determine installed addons
-* [ ] test if this even works on other machines
+* [x] test if this even works on other machines
 * [ ] maybe make it a full fledged cli application? (using argparse)
-* [ ] read and write configuration file(s) instead of hardcoding stuff into the script
+* [x] read and write configuration file(s) instead of hardcoding stuff into the script
