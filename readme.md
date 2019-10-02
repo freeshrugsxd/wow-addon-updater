@@ -6,13 +6,13 @@ A script to update all my addons with a single command.
 ## what it does
 As of now, the script
 * checks for updates, downloads and extracts files synchronously
+* updates addons for either classic, retail or both at the same time
 * reads and writes a configuration file
 * saves downloaded files to a cache folder
 * scrapes relevant information from Curseforge using bs4 (because I'm an idiot and
     thats all I could come up with)
 * bypasses cloudflare ddos protection (IUAM) pages 
 * determines available upgrades based on upload time of the latest file on Curseforge
-* only downloads addons for one game flavor (classic or retail)
 
 ## what you need
 ### requirements
