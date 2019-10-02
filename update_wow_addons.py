@@ -36,8 +36,7 @@ class Updater:
             self.config.read_file(f)
 
         self.game_dir = self.config['settings']['game directory']
-        assert isdir(self.game_dir), exit(f'Error: \'{self.game_dir}\' is not a valid'
-                                          f' game directory.')
+        assert isdir(self.game_dir), exit(f'Error: \'{self.game_dir}\' is not a valid game directory.')
 
         if self.testing:
             test_dir = '/home/silvio/tmp/updater_test'
@@ -62,18 +61,19 @@ class Updater:
         if self.client in clients:
             self.collect_addons(self.client)
         else:
+            client_list = []
             if ',' in self.client:
-                client = list(set(self.client.split(',')))
+                client_list = list(set(self.client.split(',')))
             elif self.client in ['both', 'all']:
-                client = clients
+                client_list = clients
             else:
                 exit(f'Error: Invalid game version specified. \'{self.client}\''
                      f' is not accepted. Must be either classic, retail or both')
 
-            for c in client:
-                c = c.strip()
-                if c in clients and len(c) > 0:
-                    self.collect_addons(c)
+            for client in client_list:
+                client = client.strip()
+                if client in clients and len(client) > 0:
+                    self.collect_addons(client)
 
         self.addons_len = len(self.addons)
         assert self.addons_len > 0, exit(
