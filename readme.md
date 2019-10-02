@@ -33,6 +33,12 @@ update addons for should go under`[settings]`. Under `[classic]` and `[retail]` 
 names of the addons that you want to keep up-to-date. There is one section for each version of the game
 right now. 
 
+#### game version
+Possible values for the `version` setting are <i>classic</i> and <i>retail</i>. To track addons of
+both versions you can simply write both, separated by a comma. You can also literally set `version` to <i>
+both</i> or <i>all</i> and the program will update retail and classic addons
+simultaneously.
+
 #### addon names
 The name of an addon is currently the project name from its Curseforge URL.
 If you want an addon to be tracked and updated, you have to look it up on 
@@ -40,13 +46,15 @@ Curseforge and copy the last part of the project url.
 
 For example, let's say the addon you want to track is called "<i>T.H.I.S. Addon</i>"
 then the project url is probably going to be something like `.../wow/addons/this-addon`.
-Now, we are going to copy `this-addon` and paste it into the configuration file.
+Copy `this-addon` and paste it into the configuration file.
+
+
 
 #### example configuration
 
 ```ini
 [settings]
-version=classic
+version=both
 game directory=D:/games/World of Warcraft
 
 [retail]
@@ -75,4 +83,4 @@ and it should just work™.
 * [x] test if this even works on other machines
 * [ ] maybe make it a full fledged cli application?
 * [x] read and write configuration file(s) instead of hardcoding stuff into the script
-* [ ] add option to always check updates for both game versions 
+* [x] add option to always check updates for both game versions 
