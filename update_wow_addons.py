@@ -60,7 +60,6 @@ class Updater:
         game_versions = list(self.filters.keys())
 
         if self.game_version not in game_versions:
-            versions = None
             if ',' in self.game_version:
                 versions = list(set(self.game_version.split(',')))
 
@@ -158,7 +157,7 @@ class Updater:
 
         eol = '\n\n' if len(outdated) == 0 else f' ({round(time()-start, ndigits=2)}s)\n\n'
         self.print_looking_for_update(eol=eol)
-        # find_update populates updateable
+
         outdated_len = len(outdated)
 
         if outdated_len == 0:
@@ -227,21 +226,6 @@ class Addon:
     def set_latest_file(self, fl):
         self.latest_file = float(fl)
         return self
-
-    def name(self):
-        return self.name
-
-    def version(self):
-        return self.version
-
-    def file_url(self):
-        return self.file_url
-
-    def last_update(self):
-        return self.last_update
-
-    def latest_file(self):
-        return self.latest_file
 
     def outdated(self):
         if self.last_update is not None and self.latest_file is not None:
