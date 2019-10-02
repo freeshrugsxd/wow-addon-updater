@@ -14,8 +14,8 @@ from bs4 import BeautifulSoup as bs
 
 
 class Updater:
-    def __init__(self):
-        self.testing = False  # if true, game dir changes and random addons are updated
+    def __init__(self, testing=False):
+        self.testing = testing  # if true, game dir changes and random addons are updated
         self.windows = pf_system() == 'Windows'
         self.not_windows = not self.windows
         self.base_url = 'https://www.curseforge.com'
@@ -45,7 +45,7 @@ class Updater:
             print(f'Running in testing mode. Changing game directory to \'{test_dir}\''
                   f' and updating random addons.\n')
 
-        self.game_version = self.config['settings']['version']
+        self.client = self.config['settings']['client']
 
         # codes to filter the latest files page for specific game version
         self.filters = {
@@ -57,41 +57,41 @@ class Updater:
         self.addons_len = 0
         self.size = 0.0
 
-        game_versions = list(self.filters.keys())
+        clients = list(self.filters.keys())
 
-        if self.game_version in game_versions:
-            self.collect_addons(self.game_version)
+        if self.client in clients:
+            self.collect_addons(self.client)
         else:
-            if ',' in self.game_version:
-                versions = list(set(self.game_version.split(',')))
-            elif self.game_version in ['both', 'all']:
-                versions = game_versions
+            if ',' in self.client:
+                client = list(set(self.client.split(',')))
+            elif self.client in ['both', 'all']:
+                client = clients
             else:
-                exit(f'Error: Invalid game version specified. \'{self.game_version}\''
+                exit(f'Error: Invalid game version specified. \'{self.client}\''
                      f' is not accepted. Must be either classic, retail or both')
 
-            for v in versions:
-                v = v.strip()
-                if v in game_versions and len(v) > 0:
-                    self.collect_addons(v)
+            for c in client:
+                c = c.strip()
+                if c in clients and len(c) > 0:
+                    self.collect_addons(c)
 
         self.addons_len = len(self.addons)
         assert self.addons_len > 0, exit(
-            f'Error: No addons found in [{self.game_version}] section of the configuration file.')
+            f'Error: No addons found in [{self.client}] section of the configuration file.')
 
         self.main()
 
-    def collect_addons(self, version):
+    def collect_addons(self, client):
 
-        for name, last_update in self.config.items(version):
+        for name, last_update in self.config.items(client):
             if last_update is None or (self.testing and bool(randint(0, 1))):
                 last_update = 0.0
 
-            self.addons.append(Addon(name=name, version=version, last_update=last_update))
+            self.addons.append(Addon(name=name, client=client, last_update=last_update))
 
     def find_update(self, addon):
         cfs = cfscrape.create_scraper()
-        r = cfs.get(f'{self.base_url}/wow/addons/{addon.name}/files/all?filter-game-version={self.filters[addon.version]}')
+        r = cfs.get(f'{self.base_url}/wow/addons/{addon.name}/files/all?filter-game-version={self.filters[addon.client]}')
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
 
@@ -127,7 +127,7 @@ class Updater:
                     f.write(zip_file.content)
                     break
 
-        ZipFile(out_path).extractall(self.addon_dir(addon.version))
+        ZipFile(out_path).extractall(self.addon_dir(addon.client))
         zip_size = getsize(out_path) / 1024 / 1024
 
         return addon, zip_size, addon_start
@@ -158,7 +158,7 @@ class Updater:
                  f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
 
         else:
-            addons_sorted = [a.name for a in sorted(outdated, key=lambda x: (x.version, x.name))]
+            addons_sorted = [a.name for a in sorted(outdated, key=lambda x: (x.client, x.name))]
             print(f'{Style.BRIGHT}{Fore.CYAN}=>{Fore.RESET}'
                   f' Updating {Fore.YELLOW}{outdated_len if outdated_len > 1 else ""}'
                   f'{Fore.RESET}{" addons" if outdated_len > 1 else "addon"}:{Style.RESET_ALL}'
@@ -171,7 +171,7 @@ class Updater:
                 pbar = tqdm(p.imap_unordered(self.update_addon, outdated), total=outdated_len)
                 for addon, size, timestamp in pbar:
                     self.size += size
-                    self.config.set(f'{addon.version}', addon.name, str(timestamp))
+                    self.config.set(f'{addon.client}', addon.name, str(timestamp))
 
             if not self.testing:
                 with open(self.config_file, 'w') as f:
@@ -181,8 +181,8 @@ class Updater:
 
         deinit()
 
-    def addon_dir(self, version):
-        addon_dir = pjoin(self.game_dir, f'_{version}_', 'Interface', 'AddOns')
+    def addon_dir(self, client):
+        addon_dir = pjoin(self.game_dir, f'_{client}_', 'Interface', 'AddOns')
         assert isdir(addon_dir), exit(f'Error: No Addon Folder found at \'{addon_dir}\'.')
         return addon_dir
 
@@ -196,9 +196,9 @@ class Updater:
 
 
 class Addon:
-    def __init__(self, name=None, version=None, last_update=None, file_url=None, latest_file=None):
+    def __init__(self, name=None, client=None, last_update=None, file_url=None, latest_file=None):
         self.name = name
-        self.version = version
+        self.client = client
         self.file_url = file_url
         self.last_update = last_update
         self.latest_file = latest_file
@@ -210,4 +210,4 @@ class Addon:
 
 if __name__ == '__main__':
     idx = Value('i', 0)
-    Updater()
+    Updater(testing=True)
