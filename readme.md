@@ -26,17 +26,17 @@ $ pip3 install --user bs4 cfscrape colorama tqdm
 `cfscrape` also requires [nodejs](https://nodejs.org/en/) 10 or higher to solve Cloudflare's JavaScript challenges.
 
 ### configuration file
-The configuration file must be in the same directory as the script. It [follows the structure
+The configuration file must be in the same directory and have the same name as the
+script file (currently`update_wow_addons.config`). It [follows the structure
 of INI-files](https://docs.python.org/3/library/configparser.html#supported-ini-file-structure) and
-contains three sections. The path to you game installation folder and the WoW version you want to
-update addons for should go under`[settings]`. Under `[classic]` and `[retail]` you put the
-names of the addons that you want to keep up-to-date. There is one section for each version of the game
-right now. 
+contains three sections. The path to your game installation folder and the WoW version you want to
+update addons for should go under`[settings]`. Names of addons you want to keep up-to-date 
+go into their respective section,`[classic]`or`[retail]`. 
 
-#### game version
-Possible values for the `version` setting are <i>classic</i> and <i>retail</i>. To track addons of
-both versions you can simply write both, separated by a comma. You can also literally set `version` to <i>
-both</i> or <i>all</i> and the program will update retail and classic addons
+#### client version
+Possible values for the `client` setting are <i>classic</i> and <i>retail</i>. To track addons of
+both versions you can simply enter both, separated by a comma. You can also literally just set it to <i>
+both</i> (or <i>all</i>) and the program will update retail and classic addons
 simultaneously.
 
 #### addon names
@@ -51,10 +51,10 @@ Copy `this-addon` and paste it into the configuration file.
 
 
 #### example configuration
-
+update_wow_addons.config
 ```ini
 [settings]
-version=both
+client=both
 game directory=D:/games/World of Warcraft
 
 [retail]
