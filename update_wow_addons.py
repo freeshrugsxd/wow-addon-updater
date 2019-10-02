@@ -159,10 +159,11 @@ class Updater:
 
         else:
             addons_sorted = [a.name for a in sorted(outdated, key=lambda x: (x.client, x.name))]
+            name_string = ' '.join([f'{Fore.LIGHTGREEN_EX}{s[:2]}{Style.RESET_ALL}{s[2:]}' for s in addons_sorted])
             print(f'{Style.BRIGHT}{Fore.CYAN}=>{Fore.RESET}'
                   f' Updating {Fore.YELLOW}{outdated_len if outdated_len > 1 else ""}'
                   f'{Fore.RESET}{" addons" if outdated_len > 1 else "addon"}:{Style.RESET_ALL}'
-                  f'{Fore.LIGHTGREEN_EX}', ' '.join(addons_sorted), Fore.RESET, '\n')
+                  f' {name_string}', Style.RESET_ALL, '\n')
 
             tqdm.get_lock()  # ensures locks exist
 
@@ -210,4 +211,4 @@ class Addon:
 
 if __name__ == '__main__':
     idx = Value('i', 0)
-    Updater(testing=True)
+    Updater()
