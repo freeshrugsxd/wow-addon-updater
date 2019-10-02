@@ -87,7 +87,7 @@ class Updater:
             if last_update is None or (self.testing and bool(randint(0, 1))):
                 last_update = 0.0
 
-            self.addons.append(Addon(name=name, client=client, last_update=last_update))
+            self.addons.append(Addon(name=name, client=client, last_update=float(last_update)))
 
     def find_update(self, addon):
         cfs = cfscrape.create_scraper()
