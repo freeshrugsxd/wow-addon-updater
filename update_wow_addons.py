@@ -59,30 +59,21 @@ class Updater:
 
         game_versions = list(self.filters.keys())
 
-        if self.game_version not in game_versions:
+        if self.game_version in game_versions:
+            self.collect_addons(self.game_version)
+        else:
             if ',' in self.game_version:
                 versions = list(set(self.game_version.split(',')))
-
             elif self.game_version in ['both', 'all']:
                 versions = game_versions
-
             else:
-                exit(f'Error: Unknown game version specified. \'{self.game_version}\''
-                     f' is not a valid value. Must be either classic or retail')
+                exit(f'Error: Invalid game version specified. \'{self.game_version}\''
+                     f' is not accepted. Must be either classic, retail or both')
 
             for v in versions:
                 v = v.strip()
                 if v in game_versions and len(v) > 0:
                     self.collect_addons(v)
-                else:
-                    exit(f'Error: Unknown game version specified. \'{self.game_version}\''
-                         f' is not a valid value. Must be either classic, retail or both.')
-
-        elif self.game_version in game_versions:
-            self.collect_addons(self.game_version)
-        else:
-            exit(f'Error: Unknown game version specified. \'{self.game_version}\' '
-                 f'is not a valid value. Must be either classic, retail or both.')
 
         self.addons_len = len(self.addons)
         assert self.addons_len > 0, exit(
@@ -95,7 +86,8 @@ class Updater:
         for name, last_update in self.config.items(version):
             if last_update is None or (self.testing and bool(randint(0, 1))):
                 last_update = 0.0
-            self.addons.append(Addon(name).set_version(version).set_last_update(last_update))
+
+            self.addons.append(Addon(name=name, version=version, last_update=last_update))
 
     def find_update(self, addon):
         cfs = cfscrape.create_scraper()
@@ -113,8 +105,8 @@ class Updater:
             if release_type in self.allowed_release_types.upper():
                 last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
                 if last_update_curse > addon.last_update:
-                    addon.set_file_url(cols[1].find('a')['href'])
-                    addon.set_latest_file(last_update_curse)
+                    addon.file_url = cols[1].find('a')['href']
+                    addon.latest_file = last_update_curse
 
                     return addon
 
@@ -153,6 +145,7 @@ class Updater:
         with Pool(num_workers) as p:
             arr = p.map(self.find_update, self.addons)
 
+        # first filter out NoneTypes, then return only the outdated addons
         outdated = list(filter(lambda x: x and x.outdated, arr))
 
         eol = '\n\n' if len(outdated) == 0 else f' ({round(time()-start, ndigits=2)}s)\n\n'
@@ -161,7 +154,6 @@ class Updater:
         outdated_len = len(outdated)
 
         if outdated_len == 0:
-            print(end='')
             exit(f'{Fore.CYAN}=>{Fore.RESET} All addons are up-to-date! '
                  f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
 
@@ -204,28 +196,12 @@ class Updater:
 
 
 class Addon:
-    def __init__(self, name):
+    def __init__(self, name=None, version=None, last_update=None, file_url=None, latest_file=None):
         self.name = name
-        self.file_url = None
-        self.version = None
-        self.last_update = None
-        self.latest_file = None
-
-    def set_version(self, version):
         self.version = version
-        return self
-
-    def set_file_url(self, url):
-        self.file_url = url
-        return self
-
-    def set_last_update(self, fl):
-        self.last_update = float(fl)
-        return self
-
-    def set_latest_file(self, fl):
-        self.latest_file = float(fl)
-        return self
+        self.file_url = file_url
+        self.last_update = last_update
+        self.latest_file = latest_file
 
     def outdated(self):
         if self.last_update is not None and self.latest_file is not None:
