@@ -104,9 +104,8 @@ class Updater:
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
 
-        if self.not_windows:
-            self.print_looking_for_update(i=idx.value)
-            idx.value += 1
+        self.print_looking_for_update(i=idx.value)
+        idx.value += 1
 
         for row in rows[1:]:
             cols = row.find_all('td')
@@ -146,13 +145,12 @@ class Updater:
         num_workers = cpu_count() * 2
 
         init()
-        if self.windows:
-            self.print_looking_for_update()
-
         start = time()
 
+        shared_idx = Value('i', 0)
+
         # check for lates versions
-        with Pool(num_workers) as p:
+        with Pool(num_workers, initializer=init_globals, initargs=(shared_idx,)) as p:
             arr = p.map(self.find_update, self.addons)
 
         # first filter out NoneTypes, then return only the outdated addons
@@ -206,12 +204,17 @@ class Updater:
         return addon_dir
 
     def print_looking_for_update(self, i=0, eol=' '):
-        anim = ['⠶', '⠦', '⠖', '⠲', '⠴']
-        symbol = '::' if self.windows else anim[int(i / 2) % len(anim)]
+        anim = ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
+        symbol = anim[int(i/2) % len(anim)]
 
         print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
               f' Checking for latest versions of {Fore.YELLOW}{self.addons_len}'
               f'{Fore.RESET} {"addons" if self.addons_len > 1 else "addon"}.{Style.RESET_ALL}', end=eol)
+
+
+def init_globals(counter):
+    global idx
+    idx = counter
 
 
 class Addon:
@@ -228,5 +231,4 @@ class Addon:
 
 
 if __name__ == '__main__':
-    idx = Value('i', 0)
-    Updater()
+    Updater(testing=True)
