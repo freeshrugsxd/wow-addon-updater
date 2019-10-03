@@ -168,13 +168,18 @@ class Updater:
                  f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
 
         else:
-            addons_sorted = [a.name for a in sorted(outdated, key=lambda x: (x.client, x.name))]
-            name_string = ' '.join([f'{Fore.LIGHTGREEN_EX}{s[:2]}{Style.RESET_ALL}{s[2:]}' for s in addons_sorted])
+            cols = {
+                'classic': Fore.RED,
+                'retail': Fore.LIGHTGREEN_EX
+            }
+
+            addons_sorted = [[a.name, a.client] for a in sorted(outdated, key=lambda x: (x.client, x.name))]
+            colored_names = ' '.join([f'{cols[c]}{n[:2]}{Fore.RESET}{n[2:]}' for n, c in addons_sorted])
 
             print(f'{Style.BRIGHT}{Fore.CYAN}=>{Fore.RESET} Updating {Fore.YELLOW}'
                   f'{outdated_len if outdated_len > 1 else ""}{Fore.RESET}'
                   f'{" addons" if outdated_len > 1 else "addon"}:{Style.RESET_ALL} '
-                  f'{name_string}', Style.RESET_ALL, '\n')
+                  f'{colored_names}', Style.RESET_ALL, '\n')
 
             tqdm.get_lock()  # ensures locks exist
 
