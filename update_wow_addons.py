@@ -231,4 +231,4 @@ class Addon:
 
 
 if __name__ == '__main__':
-    Updater(testing=True)
+    Updater()
