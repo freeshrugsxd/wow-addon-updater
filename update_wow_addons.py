@@ -86,6 +86,8 @@ class Updater:
         if self.addons_len == 0:
             raise RuntimeError(f'No addons found in [{self.client}] section of the configuration file.')
 
+        self.cfs = cfscrape.create_scraper()
+
         self.main()
 
     def collect_addons(self, client):
@@ -97,9 +99,8 @@ class Updater:
             self.addons.append(Addon(name=name, client=client, last_update=float(last_update)))
 
     def find_update(self, addon):
-        cfs = cfscrape.create_scraper()
         url = f'{self.base_url}/wow/addons/{addon.name}/files/all?filter-game-version={self.filters[addon.client]}'
-        r = cfs.get(url)
+        r = self.cfs.get(url)
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
 
@@ -123,8 +124,7 @@ class Updater:
     def update_addon(self, addon):
         addon_start = time()
         out_path = pjoin(self.cache_dir, f'{addon.client}_{addon.name}.zip')
-        cfs = cfscrape.create_scraper()
-        r = cfs.get(f'{self.base_url}{addon.file_url}')
+        r = self.cfs.get(f'{self.base_url}{addon.file_url}')
         soup = bs(r.text, 'html.parser')
         a_tag_buttons = soup.find_all('a', {'class': 'button button--hollow'})
 
@@ -173,6 +173,7 @@ class Updater:
                 'retail': Fore.LIGHTGREEN_EX
             }
 
+            # sort addons by client first, then by name
             addons_sorted = [[a.name, a.client] for a in sorted(outdated, key=lambda x: (x.client, x.name))]
             colored_names = ' '.join([f'{cols[c]}{n[:2]}{Fore.RESET}{n[2:]}' for n, c in addons_sorted])
 
