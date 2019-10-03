@@ -122,7 +122,7 @@ class Updater:
 
     def update_addon(self, addon):
         addon_start = time()
-        out_path = pjoin(self.cache_dir, f'{addon.name}.zip')
+        out_path = pjoin(self.cache_dir, f'{addon.client}_{addon.name}.zip')
         cfs = cfscrape.create_scraper()
         r = cfs.get(f'{self.base_url}{addon.file_url}')
         soup = bs(r.text, 'html.parser')
