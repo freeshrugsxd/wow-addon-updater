@@ -184,7 +184,9 @@ class Updater:
 
             # update out-of-date addons
             with Pool(num_workers) as p:
-                pbar = tqdm(p.imap_unordered(self.update_addon, outdated), total=outdated_len)
+                pbar = tqdm(iterable=p.imap_unordered(self.update_addon, outdated),
+                            total=outdated_len,
+                            bar_format='{n_fmt}/{total_fmt} |{bar}')
                 for addon, size, timestamp in pbar:
                     self.size += size
                     self.config.set(f'{addon.client}', addon.name, str(timestamp))
@@ -212,9 +214,9 @@ class Updater:
               f'{Fore.RESET} {"addons" if self.addons_len > 1 else "addon"}.{Style.RESET_ALL}', end=eol)
 
 
-def init_globals(counter):
+def init_globals(shared_idx):
     global idx
-    idx = counter
+    idx = shared_idx
 
 
 class Addon:
