@@ -23,7 +23,7 @@ class Updater:
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
         if not self.allowed_release_types.upper() in 'RBA':
-            raise RuntimeError('Release Types must be R, B, A or any combination of them.')
+            raise RuntimeError(f'{Fore.RED}Release Types must be R, B, A or any combination of them.')
 
         self.cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
 
@@ -34,7 +34,7 @@ class Updater:
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
         if not isfile(self.config_file):
-            raise RuntimeError(f'No config file detected at \'{self.config_file}\'')
+            raise RuntimeError(f'{Fore.RED}No config file detected at \'{self.config_file}\'')
 
         with open(self.config_file, 'r') as f:
             self.config = ConfigParser(allow_no_value=True, interpolation=None)
@@ -42,7 +42,7 @@ class Updater:
 
         self.game_dir = self.config['settings']['game directory']
         if not isdir(self.game_dir):
-            raise RuntimeError(f'\'{self.game_dir}\' is not a valid game directory.')
+            raise RuntimeError(f'{Fore.RED}\'{self.game_dir}\' is not a valid game directory.')
 
         if self.testing:
             test_dir = '/home/silvio/tmp/updater_test'
@@ -73,18 +73,19 @@ class Updater:
             elif self.client in ['both', 'all']:
                 client_list = clients
             else:
-                raise RuntimeError(f'Invalid game version specified. \'{self.client}\' is '
-                                   f'not accepted. Must be either classic, retail or both.')
+                raise RuntimeError(f'{Fore.RED}Invalid game version specified. \'{self.client}\''
+                                   f' is not accepted. Must be either classic, retail or both.')
 
             for client in client_list:
                 client = client.strip()
 
                 if client in clients and len(client) > 0:
+                    self.addon_dir(client)  # early check if client is installed
                     self.collect_addons(client)
 
         self.addons_len = len(self.addons)
         if self.addons_len == 0:
-            raise RuntimeError(f'No addons found in [{self.client}] section of the configuration file.')
+            raise RuntimeError(f'{Fore.RED}No addons found in [{self.client}] section of the configuration file.')
 
         self.cfs = cfscrape.create_scraper()
 
@@ -187,6 +188,7 @@ class Updater:
                 pbar = tqdm(iterable=p.imap_unordered(self.update_addon, outdated),
                             total=outdated_len,
                             bar_format='{n_fmt}/{total_fmt} |{bar}')
+
                 for addon, size, timestamp in pbar:
                     self.size += size
                     self.config.set(f'{addon.client}', addon.name, str(timestamp))
@@ -202,7 +204,7 @@ class Updater:
     def addon_dir(self, client):
         addon_dir = pjoin(self.game_dir, f'_{client}_', 'Interface', 'AddOns')
         if not isdir(addon_dir):
-            raise RuntimeError(f'No Addon Folder found at \'{addon_dir}\'.')
+            raise RuntimeError(f'{Fore.RED}No Addon Folder found at \'{addon_dir}\'.')
         return addon_dir
 
     def print_looking_for_update(self, i=0, eol=' '):
