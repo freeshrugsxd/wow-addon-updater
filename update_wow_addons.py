@@ -166,11 +166,9 @@ class Updater:
                 try:
                     # use timeout to prevent deadlocks
                     arr.append(it.next(timeout=15))
-
                 except mp_TimeoutError:
                     self.worker_timed_out = True
                     continue
-
                 # standard signal that iterator is exhausted
                 except StopIteration:
                     break
