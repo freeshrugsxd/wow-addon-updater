@@ -1,5 +1,6 @@
 from configparser import ConfigParser
 from multiprocessing import Pool, Value
+from multiprocessing.context import TimeoutError as mp_TimeoutError
 from os import cpu_count, mkdir
 from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
@@ -20,6 +21,7 @@ class Updater:
         self.windows = pf_system() == 'Windows'
         self.not_windows = not self.windows
         self.base_url = 'https://www.curseforge.com'
+        self.worker_timed_out = False
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
         if not self.allowed_release_types.upper() in 'RBA':
@@ -70,7 +72,6 @@ class Updater:
         if self.client in clients:
             self.collect_addons(self.client)
         else:
-            client_list = []
             if ',' in self.client:
                 client_list = list(set(self.client.split(',')))
             elif self.client in ['both', 'all']:
@@ -105,6 +106,10 @@ class Updater:
     def find_update(self, addon):
         url = f'{self.base_url}/wow/addons/{addon.name}/files/all?filter-game-version={self.filters[addon.client]}'
         r = self.cfs.get(url)
+
+        if r.status_code != 200:
+            r.raise_for_status()
+
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
 
@@ -155,7 +160,18 @@ class Updater:
 
         # check for lates versions
         with Pool(num_workers, initializer=init_globals, initargs=(shared_idx,)) as p:
-            arr = p.map(self.find_update, self.addons)
+            it = p.imap_unordered(self.find_update, self.addons)
+            arr = []
+            for _ in it:
+                try:
+                    # use timeout to prevent deadlocks
+                    arr.append(it.next(timeout=15))
+                except mp_TimeoutError:
+                    self.worker_timed_out = True
+                    continue
+                # standard signal that iterator is exhausted
+                except StopIteration:
+                    break
 
         # first filter out NoneTypes, then return only the outdated addons
         outdated = list(filter(lambda x: x and x.outdated, arr))
@@ -205,7 +221,10 @@ class Updater:
                 with open(self.config_file, 'w') as f:
                     self.config.write(f)
 
-            print(f'\nsummary: {round(time() - start, ndigits=2)}s, {round(self.size, ndigits=2)}MB')
+            msg = f'\nsummary: {round(time() - start, ndigits=2)}s, {round(self.size, ndigits=2)}MB'
+            if self.worker_timed_out:
+                msg += '\n Some workers timed out. Run the program again to be certain everything is up-to-date!'
+            print(msg)
 
         deinit()
 
