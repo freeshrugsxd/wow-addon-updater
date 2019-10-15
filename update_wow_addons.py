@@ -122,7 +122,6 @@ class Updater:
 
             if release_type in self.allowed_release_types.upper():
                 last_update_curse = int(cols[3].find('abbr').get('data-epoch'))
-
                 if last_update_curse > addon.last_update:
                     addon.file_url = cols[1].find('a')['href']
                     addon.latest_file = last_update_curse
@@ -162,16 +161,14 @@ class Updater:
         with Pool(num_workers, initializer=init_globals, initargs=(shared_idx,)) as p:
             it = p.imap_unordered(self.find_update, self.addons)
             arr = []
-            for _ in it:
+
+            for _ in self.addons:
                 try:
-                    # use timeout to prevent deadlocks
                     arr.append(it.next(timeout=15))
+
                 except mp_TimeoutError:
                     self.worker_timed_out = True
                     continue
-                # standard signal that iterator is exhausted
-                except StopIteration:
-                    break
 
         # first filter out NoneTypes, then return only the outdated addons
         outdated = list(filter(lambda x: x and x.outdated, arr))
@@ -223,7 +220,7 @@ class Updater:
 
             msg = f'\nsummary: {round(time() - start, ndigits=2)}s, {round(self.size, ndigits=2)}MB'
             if self.worker_timed_out:
-                msg += '\n Some workers timed out. Run the program again to be certain everything is up-to-date!'
+                msg += '\nSome workers timed out. Run the program again to be certain everything is up-to-date!'
             print(msg)
 
         deinit()
@@ -255,6 +252,9 @@ class Addon:
         self.file_url = file_url
         self.last_update = last_update
         self.latest_file = latest_file
+
+    def __repr__(self):
+        return self.name
 
     def outdated(self):
         if self.last_update is not None and self.latest_file is not None:
