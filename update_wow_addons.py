@@ -1,6 +1,5 @@
 from configparser import ConfigParser
-from multiprocessing import Pool, Value
-from multiprocessing.context import TimeoutError as mp_TimeoutError
+from multiprocessing import Pool, TimeoutError as mpTimeoutError, Value
 from os import cpu_count, mkdir
 from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
@@ -21,6 +20,7 @@ class Updater:
         self.windows = pf_system() == 'Windows'
         self.not_windows = not self.windows
         self.base_url = 'https://www.curseforge.com'
+        self.timeout = 15  # seconds
         self.worker_timed_out = False
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
@@ -164,9 +164,9 @@ class Updater:
 
             while True:
                 try:
-                    arr.append(it.next(timeout=15))
+                    arr.append(it.next(timeout=self.timeout))
 
-                except mp_TimeoutError:
+                except mpTimeoutError:
                     self.worker_timed_out = True
                     continue
 
@@ -207,16 +207,27 @@ class Updater:
 
             # update out-of-date addons
             with Pool(num_workers) as p:
-                pbar = tqdm(iterable=p.imap_unordered(self.update_addon, outdated),
-                            total=outdated_len,
-                            desc=f' {pad * " "} ',
-                            bar_format='{n_fmt}/{total_fmt} |{bar}|{desc}')
+                it = p.imap_unordered(self.update_addon, outdated)
+                pb = tqdm(total=outdated_len,
+                          desc=f' {pad * " "} ',
+                          bar_format='{n_fmt}/{total_fmt} |{bar}|{desc}')
 
-                for addon, size, timestamp in pbar:
-                    desc = f' {addon.name + (pad - len(addon.name)) * " "}{Fore.RESET} '
-                    pbar.set_description_str(desc=desc)
-                    self.size += size
-                    self.config.set(f'{addon.client}', addon.name, str(timestamp))
+                while True:
+                    try:
+                        addon, size, timestamp = it.next(timeout=self.timeout)
+                        desc = f' {addon.name + (pad - len(addon.name)) * " "}{Fore.RESET} '
+                        pb.set_description_str(desc=desc)
+                        pb.update()
+                        self.size += size
+                        self.config.set(f'{addon.client}', addon.name, str(timestamp))
+
+                    except mpTimeoutError:
+                        self.worker_timed_out = True
+                        raise
+
+                    except StopIteration:
+                        pb.close()
+                        break
 
             if not self.testing:
                 with open(self.config_file, 'w') as f:
@@ -258,7 +269,7 @@ class Addon:
         self.latest_file = latest_file
 
     def __repr__(self):
-        return f'<{self.name}>'
+        return f'<{self.name}:{self.client}>'
 
     def outdated(self):
         if self.last_update is not None and self.latest_file is not None:
