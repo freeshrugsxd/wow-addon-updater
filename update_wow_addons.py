@@ -182,8 +182,9 @@ class Updater:
         outdated_len = len(outdated)
 
         if outdated_len == 0:
-            exit(f'{Fore.CYAN}=>{Fore.RESET} All addons are up-to-date! '
-                 f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
+            print(f'{Fore.CYAN}=>{Fore.RESET} All addons are up-to-date! '
+                  f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
+            exit(0)
 
         else:
             cols = {
