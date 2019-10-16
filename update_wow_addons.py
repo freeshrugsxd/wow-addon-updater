@@ -162,13 +162,16 @@ class Updater:
             it = p.imap_unordered(self.find_update, self.addons)
             arr = []
 
-            for _ in self.addons:
+            while True:
                 try:
                     arr.append(it.next(timeout=15))
 
                 except mp_TimeoutError:
                     self.worker_timed_out = True
                     continue
+
+                except StopIteration:
+                    break
 
         # first filter out NoneTypes, then return only the outdated addons
         outdated = list(filter(lambda x: x and x.outdated, arr))
@@ -254,7 +257,7 @@ class Addon:
         self.latest_file = latest_file
 
     def __repr__(self):
-        return self.name
+        return f'<{self.name}>'
 
     def outdated(self):
         if self.last_update is not None and self.latest_file is not None:
