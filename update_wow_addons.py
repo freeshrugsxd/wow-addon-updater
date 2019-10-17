@@ -4,6 +4,7 @@ from os import cpu_count, mkdir
 from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
 from random import randint
+from sys import exit
 from time import time
 from zipfile import ZipFile
 
