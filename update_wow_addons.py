@@ -63,12 +63,12 @@ class Updater:
             'classic': '1738749986%3A67408',
             'retail': '1738749986%3A517'
         }
+        
+        clients = ['classic', 'retail']
 
         self.addons = []
         self.addons_len = 0
         self.size = 0.0
-
-        clients = list(self.filters.keys())
 
         if self.client in clients:
             self.collect_addons(self.client)
