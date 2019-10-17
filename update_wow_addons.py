@@ -56,7 +56,7 @@ class Updater:
             # print(f'Running in testing mode. Changing game directory to \'{self.test_dir}\''
             #       f' and updating random addons.\n')
 
-        self.client = self.config['settings']['client']
+        self.client = self.config['settings']['client'].lower()
 
         # codes to filter the latest files page for specific game version
         self.filters = {
