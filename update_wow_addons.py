@@ -3,7 +3,7 @@ from multiprocessing import Pool, TimeoutError as mpTimeoutError, Value
 from os import cpu_count, mkdir
 from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
-from random import randint
+from random import randrange
 from sys import exit
 from time import time
 from zipfile import ZipFile
@@ -63,7 +63,7 @@ class Updater:
             'classic': '1738749986%3A67408',
             'retail': '1738749986%3A517'
         }
-        
+
         clients = ['classic', 'retail']
 
         self.addons = []
@@ -99,7 +99,7 @@ class Updater:
     def collect_addons(self, client):
 
         for name, last_update in self.config.items(client):
-            if not last_update or (self.testing and (bool(randint(0, 1)) and bool(randint(0, 1)))):
+            if not last_update or (self.testing and randrange(1, 100) <= 25):
                 last_update = 0.0
 
             self.addons.append(Addon(name=name, client=client, last_update=float(last_update)))
@@ -287,4 +287,4 @@ if __name__ == '__main__':
     BRIGHT = Style.BRIGHT
     RESET_ALL = Style.RESET_ALL
 
-    Updater(testing=True)
+    Updater()
