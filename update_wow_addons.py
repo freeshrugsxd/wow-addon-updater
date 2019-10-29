@@ -219,7 +219,7 @@ class Updater:
 
                 while True:
                     try:
-                        addon, size, timestamp = it.next(timeout=self.timeout)
+                        addon, size, timestamp = it.next(timeout=self.timeout * 2)
                         desc = f' {addon.name + (pad - len(addon.name)) * " "}{RESET} '
                         pb.set_description_str(desc=desc)
                         pb.update()
@@ -240,7 +240,7 @@ class Updater:
 
             msg = f'\nsummary: {round(time() - start, ndigits=2)}s, {round(self.size, ndigits=2)}MB'
             if self.worker_timed_out:
-                msg += '\nSome workers timed out. Run the program again to be certain everything is up-to-date!'
+                msg += '\nSome worker/s timed out. Run the program again to be certain everything is up-to-date!'
             print(msg)
 
         deinit()
