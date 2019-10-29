@@ -26,7 +26,7 @@ class Updater:
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
         if not self.allowed_release_types.upper() in 'RBA':
-            raise RuntimeError(f'{RED}Release Types must be R, B, A or any combination of them.')
+            raise RuntimeError(f'{Fore.RED}Release Types must be R, B, A or any combination of them.')
 
         self.cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
 
@@ -37,7 +37,7 @@ class Updater:
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
         if not isfile(self.config_file):
-            raise RuntimeError(f'{RED}No config file detected at \'{self.config_file}\'')
+            raise RuntimeError(f'{Fore.RED}No config file detected at \'{self.config_file}\'')
 
         if self.testing:
             self.test_dir = '/home/silvio/tmp/updater_test'
@@ -49,7 +49,7 @@ class Updater:
 
         self.game_dir = self.config['settings']['game directory']
         if not isdir(self.game_dir):
-            raise RuntimeError(f'{RED}\'{self.game_dir}\' is not a valid game directory.')
+            raise RuntimeError(f'{Fore.RED}\'{self.game_dir}\' is not a valid game directory.')
 
         if self.testing:
             self.game_dir = self.test_dir
@@ -78,7 +78,7 @@ class Updater:
             elif self.client in ['both', 'all']:
                 client_list = clients
             else:
-                raise RuntimeError(f'{RED}Invalid game version specified. \'{self.client}\''
+                raise RuntimeError(f'{Fore.RED}Invalid game version specified. \'{self.client}\''
                                    f' is not accepted. Must be either classic, retail or both.')
 
             for client in client_list:
@@ -90,7 +90,7 @@ class Updater:
 
         self.addons_len = len(self.addons)
         if self.addons_len == 0:
-            raise RuntimeError(f'{RED}No addons found in [{self.client}] section of the configuration file.')
+            raise RuntimeError(f'{Fore.RED}No addons found in [{self.client}] section of the configuration file.')
 
         self.cfs = cfscrape.create_scraper()
 
@@ -187,26 +187,26 @@ class Updater:
         outdated_len = len(outdated)
 
         if outdated_len == 0:
-            print(f'{CYAN}=>{RESET} All addons are up-to-date! '
+            print(f'{Fore.CYAN}=>{Fore.RESET} All addons are up-to-date! '
                   f'We\'re done here! ({round(time() - start, ndigits=2)}s)')
             exit(0)
 
         else:
             cols = {
-                'classic': RED,
-                'retail': GREEN
+                'classic': Fore.RED,
+                'retail': Fore.LIGHTGREEN_EX
             }
 
             # sort addons by client first, then by name
             addons_sorted = [[a.name, a.client] for a in sorted(outdated, key=lambda x: (x.client, x.name))]
-            colored_names = ' '.join([f'{cols[c]}{n[:2]}{RESET}{n[2:]}' for n, c in addons_sorted])
+            colored_names = ' '.join([f'{cols[c]}{n[:2]}{Fore.RESET}{n[2:]}' for n, c in addons_sorted])
 
             pad = len(sorted(addons_sorted, key=lambda x: len(x[0]), reverse=True)[0][0])
 
-            print(f'{BRIGHT}{CYAN}=>{RESET} Updating {YELLOW}'
-                  f'{outdated_len if outdated_len > 1 else ""}{RESET}'
-                  f'{" addons" if outdated_len > 1 else "addon"}:{RESET_ALL} '
-                  f'{colored_names}', RESET_ALL, '\n')
+            print(f'{Style.BRIGHT}{Fore.CYAN}=>{Fore.RESET} Updating {Fore.YELLOW}'
+                  f'{outdated_len if outdated_len > 1 else ""}{Fore.RESET}'
+                  f'{" addons" if outdated_len > 1 else "addon"}:{Style.RESET_ALL} '
+                  f'{colored_names}', Style.RESET_ALL, '\n')
 
             tqdm.get_lock()  # ensures locks exist
 
@@ -220,7 +220,7 @@ class Updater:
                 while True:
                     try:
                         addon, size, timestamp = it.next(timeout=self.timeout * 2)
-                        desc = f' {addon.name + (pad - len(addon.name)) * " "}{RESET} '
+                        desc = f' {addon.name + (pad - len(addon.name)) * " "}{Fore.RESET} '
                         pb.set_description_str(desc=desc)
                         pb.update()
                         self.size += size
@@ -248,16 +248,16 @@ class Updater:
     def addon_dir(self, client):
         addon_dir = pjoin(self.game_dir, f'_{client}_', 'Interface', 'AddOns')
         if not isdir(addon_dir):
-            raise RuntimeError(f'{RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
+            raise RuntimeError(f'{Fore.RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
         return addon_dir
 
     def print_looking_for_update(self, i=0, eol=' '):
         anim = ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
         symbol = anim[int(i/2) % len(anim)]
 
-        print(f'\r{BRIGHT}{BLUE}{symbol}{RESET}'
-              f' Checking for latest versions of {YELLOW}{self.addons_len}'
-              f'{RESET} {"addons" if self.addons_len > 1 else "addon"}.{RESET_ALL}', end=eol)
+        print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
+              f' Checking for latest versions of {Fore.YELLOW}{self.addons_len}'
+              f'{Fore.RESET} {"addons" if self.addons_len > 1 else "addon"}.{Style.RESET_ALL}', end=eol)
 
 
 def init_globals(shared_idx, print_lock):
@@ -283,13 +283,4 @@ class Addon:
 
 
 if __name__ == '__main__':
-    RED = Fore.RED
-    GREEN = Fore.LIGHTGREEN_EX
-    CYAN = Fore.CYAN
-    BLUE = Fore.BLUE
-    YELLOW = Fore.YELLOW
-    RESET = Fore.RESET
-    BRIGHT = Style.BRIGHT
-    RESET_ALL = Style.RESET_ALL
-
     Updater()
