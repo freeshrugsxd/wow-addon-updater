@@ -1,5 +1,5 @@
 from configparser import ConfigParser
-from multiprocessing import Pool, TimeoutError as mpTimeoutError, Value
+from multiprocessing import Lock, Pool, TimeoutError as mpTimeoutError, Value
 from os import cpu_count, mkdir
 from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
@@ -114,8 +114,12 @@ class Updater:
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
 
+        lock.acquire()
+
         self.print_looking_for_update(i=idx.value)
         idx.value += 1
+
+        lock.release()
 
         for row in rows[1:]:
             cols = row.find_all('td')
@@ -157,9 +161,9 @@ class Updater:
         start = time()
 
         shared_idx = Value('i', 0)
-
+        print_lock = Lock()
         # check for lates versions
-        with Pool(num_workers, initializer=init_globals, initargs=(shared_idx,)) as p:
+        with Pool(num_workers, initializer=init_globals, initargs=(shared_idx, print_lock)) as p:
             it = p.imap_unordered(self.find_update, self.addons)
             arr = []
 
@@ -224,7 +228,7 @@ class Updater:
 
                     except mpTimeoutError:
                         self.worker_timed_out = True
-                        raise
+                        continue
 
                     except StopIteration:
                         pb.close()
@@ -256,9 +260,10 @@ class Updater:
               f'{RESET} {"addons" if self.addons_len > 1 else "addon"}.{RESET_ALL}', end=eol)
 
 
-def init_globals(shared_idx):
-    global idx
+def init_globals(shared_idx, print_lock):
+    global idx, lock
     idx = shared_idx
+    lock = print_lock
 
 
 class Addon:
