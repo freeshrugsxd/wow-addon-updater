@@ -163,7 +163,10 @@ class Updater:
         shared_idx = Value('i', 0)
         print_lock = Lock()
         # check for lates versions
-        with Pool(num_workers, initializer=init_globals, initargs=(shared_idx, print_lock)) as p:
+        with Pool(processes=min(num_workers, self.addons_len),
+                  initializer=init_globals,
+                  initargs=(shared_idx, print_lock)) as p:
+
             it = p.imap_unordered(self.find_update, self.addons)
             arr = []
 
@@ -211,7 +214,8 @@ class Updater:
             tqdm.get_lock()  # ensures locks exist
 
             # update out-of-date addons
-            with Pool(num_workers) as p:
+            with Pool(processes=min(num_workers, outdated_len)) as p:
+
                 it = p.imap_unordered(self.update_addon, outdated)
                 pb = tqdm(total=outdated_len,
                           desc=f' {pad * " "} ',
