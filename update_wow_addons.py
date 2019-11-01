@@ -174,12 +174,12 @@ class Updater:
                 try:
                     arr.append(it.next(timeout=self.timeout))
 
+                except StopIteration:
+                    break
+
                 except mpTimeoutError:
                     self.worker_timed_out = True
                     continue
-
-                except StopIteration:
-                    break
 
         # first filter out NoneTypes, then return only the outdated addons
         outdated = list(filter(lambda x: x and x.outdated, arr))
@@ -230,13 +230,13 @@ class Updater:
                         self.size += size
                         self.config.set(f'{addon.client}', addon.name, str(timestamp))
 
-                    except mpTimeoutError:
-                        self.worker_timed_out = True
-                        continue
-
                     except StopIteration:
                         pb.close()
                         break
+
+                    except mpTimeoutError:
+                        self.worker_timed_out = True
+                        continue
 
             if not self.testing:
                 with open(self.config_file, 'w') as f:
