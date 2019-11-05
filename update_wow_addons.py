@@ -143,8 +143,7 @@ class Updater:
         for a_tag in a_tag_buttons:
             url = a_tag.get('href')
             if url.startswith(f'/wow/addons/{addon.name}/download/'):
-                cfs = cfscrape.create_scraper()
-                zip_file = cfs.get(f'{self.base_url}{url}/file')
+                zip_file = self.cfs.get(f'{self.base_url}{url}/file')
                 with open(out_path, 'wb') as f:
                     f.write(zip_file.content)
                     break
