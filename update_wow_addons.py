@@ -107,9 +107,7 @@ class Updater:
     def find_update(self, addon):
         url = f'{self.base_url}/wow/addons/{addon.name}/files/all?filter-game-version={self.filters[addon.client]}'
         r = self.cfs.get(url)
-
-        if r.status_code != 200:
-            r.raise_for_status()
+        check_response_status(r)
 
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
@@ -137,6 +135,8 @@ class Updater:
         addon_start = time()
         out_path = pjoin(self.cache_dir, f'{addon.client}_{addon.name}.zip')
         r = self.cfs.get(f'{self.base_url}{addon.file_url}')
+        check_response_status(r)
+
         soup = bs(r.text, 'html.parser')
         a_tag_buttons = soup.find_all('a', {'class': 'button button--hollow'})
 
@@ -144,6 +144,8 @@ class Updater:
             url = a_tag.get('href')
             if url.startswith(f'/wow/addons/{addon.name}/download/'):
                 zip_file = self.cfs.get(f'{self.base_url}{url}/file')
+                check_response_status(zip_file)
+
                 with open(out_path, 'wb') as f:
                     f.write(zip_file.content)
                     break
@@ -261,6 +263,11 @@ class Updater:
         print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
               f' Checking for latest versions of {Fore.YELLOW}{self.addons_len}'
               f'{Fore.RESET} {"addons" if self.addons_len > 1 else "addon"}.{Style.RESET_ALL}', end=eol)
+
+
+def check_response_status(response):
+    if response.status_code != 200:
+        response.raise_for_status()
 
 
 def init_globals(shared_idx, print_lock):
