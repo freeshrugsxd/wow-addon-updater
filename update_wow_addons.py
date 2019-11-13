@@ -53,8 +53,8 @@ class Updater:
 
         if self.testing:
             self.game_dir = self.test_dir
-            # print(f'Running in testing mode. Changing game directory to \'{self.test_dir}\''
-            #       f' and updating random addons.\n')
+            print(f'Running in testing mode. Changing game directory to \'{self.test_dir}\''
+                  f' and updating random addons.\n')
 
         self.client = self.config['settings']['client'].lower()
 
@@ -112,12 +112,9 @@ class Updater:
         soup = bs(r.text, 'html.parser')
         rows = soup.find_all('tr')
 
-        lock.acquire()
-
-        self.print_looking_for_update(i=idx.value)
-        idx.value += 1
-
-        lock.release()
+        with print_lock:
+            self.print_looking_for_update(i=idx.value)
+            idx.value += 1
 
         for row in rows[1:]:
             cols = row.find_all('td')
@@ -145,7 +142,6 @@ class Updater:
             if url.startswith(f'/wow/addons/{addon.name}/download/'):
                 zip_file = self.cfs.get(f'{self.base_url}{url}/file')
                 check_response_status(zip_file)
-
                 with open(out_path, 'wb') as f:
                     f.write(zip_file.content)
                     break
@@ -162,11 +158,11 @@ class Updater:
         start = time()
 
         shared_idx = Value('i', 0)
-        print_lock = Lock()
+        global_print_lock = Lock()
         # check for lates versions
         with Pool(processes=min(num_workers, self.addons_len),
                   initializer=init_globals,
-                  initargs=(shared_idx, print_lock)) as p:
+                  initargs=(shared_idx, global_print_lock)) as p:
 
             it = p.imap_unordered(self.find_update, self.addons)
             arr = []
@@ -212,8 +208,6 @@ class Updater:
                   f'{" addons" if outdated_len > 1 else "addon"}:{Style.RESET_ALL} '
                   f'{colored_names}', Style.RESET_ALL, '\n')
 
-            tqdm.get_lock()  # ensures locks exist
-
             # update out-of-date addons
             with Pool(processes=min(num_workers, outdated_len)) as p:
 
@@ -221,6 +215,8 @@ class Updater:
                 pb = tqdm(total=outdated_len,
                           desc=f' {pad * " "} ',
                           bar_format='{n_fmt}/{total_fmt} |{bar}|{desc}')
+
+                pb.set_lock(global_print_lock)
 
                 while True:
                     try:
@@ -258,7 +254,7 @@ class Updater:
 
     def print_looking_for_update(self, i=0, eol=' '):
         anim = ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
-        symbol = anim[int(i/2) % len(anim)]
+        symbol = anim[int(i / 2) % len(anim)]
 
         print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
               f' Checking for latest versions of {Fore.YELLOW}{self.addons_len}'
@@ -266,14 +262,14 @@ class Updater:
 
 
 def check_response_status(response):
-    if response.status_code != 200:
+    if not response.ok:
         response.raise_for_status()
 
 
-def init_globals(shared_idx, print_lock):
-    global idx, lock
+def init_globals(shared_idx, lock):
+    global idx, print_lock
     idx = shared_idx
-    lock = print_lock
+    print_lock = lock
 
 
 class Addon:
@@ -293,4 +289,4 @@ class Addon:
 
 
 if __name__ == '__main__':
-    Updater()
+    Updater(testing=False)
