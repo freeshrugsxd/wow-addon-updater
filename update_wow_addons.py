@@ -1,6 +1,6 @@
 from configparser import ConfigParser
 from multiprocessing import Lock, Pool, TimeoutError as mpTimeoutError, Value
-from os import cpu_count, mkdir
+from os import cpu_count, makedirs
 from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
 from random import randrange
@@ -31,9 +31,7 @@ class Updater:
         self.cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
 
         if not isdir(self.cache_dir):
-            if not isdir(dirname(self.cache_dir)):
-                mkdir(dirname(self.cache_dir))
-            mkdir(self.cache_dir)
+            makedirs(self.cache_dir)
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
         if not isfile(self.config_file):
