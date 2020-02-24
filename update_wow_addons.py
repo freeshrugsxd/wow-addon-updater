@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from multiprocessing import Lock, Pool, TimeoutError as mpTimeoutError, Value
-from os import cpu_count, makedirs
-from os.path import dirname, expanduser, getsize, isdir, isfile, join as pjoin
+from os import cpu_count, getenv, makedirs
+from os.path import abspath, dirname, expanduser, getsize, isdir, isfile, join as pjoin
 from platform import system as pf_system
 from random import randrange
 from sys import exit
@@ -18,8 +18,13 @@ class Updater:
     def __init__(self, testing=False):
         self.testing = testing  # if true, game dir changes and random addons are updated
 
-        self.windows = pf_system() == 'Windows'
-        self.not_windows = not self.windows
+        self.os = pf_system()
+        self.windows = self.os == 'Windows'
+        self.linux = self.os == 'Linux'
+
+        if not self.windows and not self.linux:
+            raise RuntimeError(f'{Fore.RED}Operating System ({self.os}) not supported.')
+
         self.base_url = 'https://www.curseforge.com'
         self.timeout = 15  # seconds
         self.worker_timed_out = False
@@ -28,31 +33,34 @@ class Updater:
         if not self.allowed_release_types.upper() in 'RBA':
             raise RuntimeError(f'{Fore.RED}Release Types must be R, B, A or any combination of them.')
 
-        self.cache_dir = pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
+        self.cache_dirs = {
+            'Windows': pjoin(str(getenv('temp')), 'wow-addon-updates'),
+            'Linux': pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
+        }
+
+        self.cache_dir = self.cache_dirs[self.os]
 
         if not isdir(self.cache_dir):
             makedirs(self.cache_dir)
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
+
         if not isfile(self.config_file):
             raise RuntimeError(f'{Fore.RED}No config file detected at \'{self.config_file}\'')
-
-        if self.testing:
-            self.test_dir = '/home/silvio/tmp/updater_test'
-            self.config_file = pjoin(self.test_dir, 'update_wow_addons.testing.config')
 
         with open(self.config_file, 'r') as f:
             self.config = ConfigParser(allow_no_value=True, interpolation=None)
             self.config.read_file(f)
 
-        self.game_dir = self.config['settings']['game directory']
-        if not isdir(self.game_dir):
-            raise RuntimeError(f'{Fore.RED}\'{self.game_dir}\' is not a valid game directory.')
-
         if self.testing:
-            self.game_dir = self.test_dir
-            print(f'Running in testing mode. Changing game directory to \'{self.test_dir}\''
-                  f' and updating random addons.\n')
+            self.game_dir = pjoin(dirname(__file__), 'testing')
+            print(f'{Fore.YELLOW}### Running in testing mode. Changing game directory to '
+                  f'\'{abspath(self.game_dir)}\' and updating random addons.\n{Fore.RESET}')
+        else:
+            self.game_dir = self.config['settings']['game directory']
+
+            if not isdir(self.game_dir):
+                raise RuntimeError(f'{Fore.RED}\'{self.game_dir}\' is not a valid game directory.')
 
         self.client = self.config['settings']['client'].lower()
 
@@ -97,7 +105,13 @@ class Updater:
     def collect_addons(self, client):
 
         for name, last_update in self.config.items(client):
-            if not last_update or (self.testing and randrange(1, 100) <= 25):
+            if self.testing:
+                if randrange(1, 100) <= 25:
+                    last_update = 0.0
+                else:
+                    last_update = time()
+
+            elif not last_update:
                 last_update = 0.0
 
             self.addons.append(Addon(name=name, client=client, last_update=float(last_update)))
@@ -247,7 +261,11 @@ class Updater:
     def addon_dir(self, client):
         addon_dir = pjoin(self.game_dir, f'_{client}_', 'Interface', 'AddOns')
         if not isdir(addon_dir):
-            raise RuntimeError(f'{Fore.RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
+            if self.testing:
+                print(f'{Fore.YELLOW}### Creating addon directory for testing at \'{addon_dir}\'.{Fore.RESET}')
+                makedirs(addon_dir)
+            else:
+                raise RuntimeError(f'{Fore.RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
         return addon_dir
 
     def print_looking_for_update(self, i=0, eol=' '):
