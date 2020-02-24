@@ -26,7 +26,7 @@ class Updater:
             raise RuntimeError(f'{Fore.RED}Operating System ({self.os}) not supported.')
 
         self.base_url = 'https://www.curseforge.com'
-        self.timeout = 20  # seconds
+        self.timeout = 15  # seconds
         self.worker_timed_out = False
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
@@ -232,7 +232,7 @@ class Updater:
 
                 while True:
                     try:
-                        addon, size, timestamp = it.next(timeout=self.timeout)
+                        addon, size, timestamp = it.next(timeout=self.timeout * 2)
                         desc = f' {addon.name + (pad - len(addon.name)) * " "}{Fore.RESET} '
                         pb.set_description_str(desc=desc)
                         pb.update()
@@ -244,8 +244,8 @@ class Updater:
                         break
 
                     except mpTimeoutError:
-                        raise RuntimeError(f'{Fore.RED}Something went wrong while installing one or more addons. '
-                                           f'Rerun the script to make sure everything is up-to-date.{Fore.RESET}')
+                        self.worker_timed_out = True
+                        continue
 
             if not self.testing:
                 with open(self.config_file, 'w') as f:
@@ -269,12 +269,7 @@ class Updater:
         return addon_dir
 
     def print_looking_for_update(self, i=0, eol=' '):
-        anims = {
-            'Windows': ['   ', '. ', '.. ', '...'],
-            'Linux': ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
-        }
-
-        anim = anims[self.os]
+        anim = ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
         symbol = anim[int(i / 2) % len(anim)]
 
         print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
