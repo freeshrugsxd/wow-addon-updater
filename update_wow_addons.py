@@ -269,7 +269,13 @@ class Updater:
         return addon_dir
 
     def print_looking_for_update(self, i=0, eol=' '):
-        anim = ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
+
+        anims = {
+            'Windows': ['   ', '. ', '.. ', '...'],
+            'Linux': ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
+        }
+
+        anim = anims[self.os]
         symbol = anim[int(i / 2) % len(anim)]
 
         print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
