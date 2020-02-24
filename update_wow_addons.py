@@ -244,8 +244,8 @@ class Updater:
                         break
 
                     except mpTimeoutError:
-                        self.worker_timed_out = True
-                        continue
+                        raise RuntimeError(f'{Fore.RED}Something went wrong while installing one or more addons. '
+                                           f'Rerun the script to make sure everything is up-to-date.{Fore.RESET}')
 
             if not self.testing:
                 with open(self.config_file, 'w') as f:
