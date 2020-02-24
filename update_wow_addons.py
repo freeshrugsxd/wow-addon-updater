@@ -26,7 +26,7 @@ class Updater:
             raise RuntimeError(f'{Fore.RED}Operating System ({self.os}) not supported.')
 
         self.base_url = 'https://www.curseforge.com'
-        self.timeout = 15  # seconds
+        self.timeout = 20  # seconds
         self.worker_timed_out = False
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
@@ -232,7 +232,7 @@ class Updater:
 
                 while True:
                     try:
-                        addon, size, timestamp = it.next(timeout=self.timeout * 2)
+                        addon, size, timestamp = it.next(timeout=self.timeout)
                         desc = f' {addon.name + (pad - len(addon.name)) * " "}{Fore.RESET} '
                         pb.set_description_str(desc=desc)
                         pb.update()
