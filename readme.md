@@ -17,13 +17,11 @@ As of now, the script
 ## what you need
 ### requirements
 This requires at least python 3.6 (because f-strings) to run and depends on the packages [`bs4`](https://www.crummy.com/software/BeautifulSoup/),
-[`cfscrape`](https://github.com/Anorov/cloudflare-scrape) (build on [`requests`](https://github.com/psf/requests)), [`colorama`](https://github.com/tartley/colorama)
+[`cloudscraper`](https://github.com/VeNoMouS/cloudscraper) (build on [`requests`](https://github.com/psf/requests)), [`colorama`](https://github.com/tartley/colorama)
 and [`tqdm`](https://tqdm.github.io/). So either install these via your package manager or do a quick
 ```
-$ pip3 install --user bs4 cfscrape colorama tqdm
+$ pip3 install --user bs4 cloudscraper colorama tqdm
 ```
-
-`cfscrape` also requires [nodejs](https://nodejs.org/en/) 10 or higher to solve Cloudflare's JavaScript challenges.
 
 ### configuration file
 The configuration file must be in the same directory and have the same name as the
