@@ -271,11 +271,11 @@ class Updater:
     def print_looking_for_update(self, i=0, eol=' '):
 
         anims = {
-            'Windows': ['   ', '. ', '.. ', '...'],
-            'Linux': ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
+            'dots': ['   ', '. ', '.. ', '...'],
+            'braille': ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
         }
 
-        anim = anims[self.os]
+        anim = anims['braille']
         symbol = anim[int(i / 2) % len(anim)]
 
         print(f'\r{Style.BRIGHT}{Fore.BLUE}{symbol}{Fore.RESET}'
