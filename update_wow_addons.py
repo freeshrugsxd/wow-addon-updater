@@ -8,7 +8,7 @@ from sys import exit
 from time import time
 from zipfile import ZipFile
 
-import cfscrape
+import cloudscraper
 from colorama import Fore, Style, deinit, init
 from tqdm import tqdm
 from bs4 import BeautifulSoup as bs
@@ -98,7 +98,7 @@ class Updater:
         if self.addons_len == 0:
             raise RuntimeError(f'{Fore.RED}No addons found in [{self.client}] section of the configuration file.')
 
-        self.cfs = cfscrape.create_scraper()
+        self.cfs = cloudscraper.create_scraper()
 
         self.main()
 
