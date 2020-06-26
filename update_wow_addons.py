@@ -73,7 +73,7 @@ class Updater:
             'retail': '1738749986%3A517'
         }
 
-        clients = ['retail']
+        clients = ['classic', 'retail']
 
         self.addons = []
         self.addons_len = 0
