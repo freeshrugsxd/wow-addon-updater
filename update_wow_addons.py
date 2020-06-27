@@ -20,7 +20,7 @@ class Updater:
 
         self.os = pf_system()
 
-        if not self.os in ["Darwin", "Windows","Linux"]:
+        if self.os not in ['Darwin', 'Windows', 'Linux']:
             raise RuntimeError(f'{Fore.RED}Operating System ({self.os}) not supported.')
 
         self.base_url = 'https://www.curseforge.com'
