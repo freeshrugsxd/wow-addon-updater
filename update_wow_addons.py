@@ -19,10 +19,8 @@ class Updater:
         self.testing = testing  # if true, game dir changes and random addons are updated
 
         self.os = pf_system()
-        self.windows = self.os == 'Windows'
-        self.linux = self.os == 'Linux'
 
-        if not self.windows and not self.linux:
+        if self.os not in ['Darwin', 'Windows', 'Linux']:
             raise RuntimeError(f'{Fore.RED}Operating System ({self.os}) not supported.')
 
         self.base_url = 'https://www.curseforge.com'
@@ -35,13 +33,18 @@ class Updater:
 
         self.cache_dirs = {
             'Windows': pjoin(str(getenv('temp')), 'wow-addon-updates'),
-            'Linux': pjoin(expanduser('~'), '.cache', 'wow-addon-updates')
-        }
+            'Linux': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
+            'Darwin': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
+             }
 
         self.cache_dir = self.cache_dirs[self.os]
 
         if not isdir(self.cache_dir):
-            makedirs(self.cache_dir)
+            try:
+                makedirs(self.cache_dir)
+            except PermissionError as e:
+                Fore.RED(f'Do not have permissions to access {self.cache_dir}, error:\n {e}')
+
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
 
