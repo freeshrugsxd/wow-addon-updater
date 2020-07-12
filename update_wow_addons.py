@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from multiprocessing import Lock, Pool, TimeoutError as mpTimeoutError, Value
-from os import cpu_count, getenv, makedirs
-from os.path import abspath, dirname, expanduser, getsize, isdir, isfile, join as pjoin
+from os import cpu_count, getenv
+from pathlib import Path
 from platform import system as pf_system
 from random import randrange
 from sys import exit
@@ -25,22 +25,23 @@ class Updater:
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
 
         self.cache_dirs = {
-            'Windows': pjoin(str(getenv('temp')), 'wow-addon-updates'),
-            'Linux': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
-            'Darwin': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
+            'Windows': Path(str(getenv('temp'))),
+            'Linux': Path.home() / '.cache',
+            'Darwin': Path.home() / '.cache'
         }
 
-        self.cache_dir = self.cache_dirs[pf_system()]
+        self.cache_dir = self.cache_dirs[pf_system()] / 'wow-addon-updates'
 
-        if not isdir(self.cache_dir):
+        if not self.cache_dir.is_dir():
             try:
-                makedirs(self.cache_dir)
+                self.cache_dir.mkdir()
+
             except PermissionError as e:
                 raise RuntimeError(f'{Fore.RED}Do not have permissions to access {self.cache_dir}, error:\n {e}')
 
-        self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
+        self.config_file = Path(__file__).resolve().parent / 'update_wow_addons.config'
 
-        if not isfile(self.config_file):
+        if not self.config_file.is_file():
             raise RuntimeError(f'{Fore.RED}No config file detected at \'{self.config_file}\'')
 
         with open(self.config_file, 'r') as f:
@@ -48,13 +49,13 @@ class Updater:
             self.config.read_file(f)
 
         if self.testing:
-            self.game_dir = pjoin(dirname(__file__), 'testing')
+            self.game_dir = Path(__file__).resolve().parent / 'testing'
             print(f'{Fore.YELLOW}### Running in testing mode. Changing game directory to '
-                  f'\'{abspath(self.game_dir)}\' and updating random addons.\n{Fore.RESET}')
+                  f'\'{self.game_dir}\' and updating random addons.\n{Fore.RESET}')
         else:
-            self.game_dir = self.config['settings']['game directory']
+            self.game_dir = Path(self.config['settings']['game directory'])
 
-            if not isdir(self.game_dir):
+            if not self.game_dir.is_dir():
                 raise RuntimeError(f'{Fore.RED}\'{self.game_dir}\' is not a valid game directory.')
 
         self.client = self.config['settings']['client'].lower()
@@ -137,7 +138,7 @@ class Updater:
 
     def _update_addon(self, addon):
         addon_start = time()
-        out_path = pjoin(self.cache_dir, f'{addon.client}_{addon.name}.zip')
+        out_path = self.cache_dir / f'{addon.client}_{addon.name}.zip'
         r = self.cfs.get(f'{self.base_url}{addon.file_url}')
         check_response_status(r)
 
@@ -154,7 +155,7 @@ class Updater:
                     break
 
         ZipFile(out_path).extractall(self._addon_dir(addon.client))
-        zip_size = getsize(out_path) / 1024 / 1024
+        zip_size = out_path.stat().st_size / 1024 / 1024
 
         return addon, zip_size, addon_start
 
@@ -254,11 +255,12 @@ class Updater:
         deinit()
 
     def _addon_dir(self, client):
-        addon_dir = pjoin(self.game_dir, f'_{client}_', 'Interface', 'AddOns')
-        if not isdir(addon_dir):
+        addon_dir = self.game_dir / f'_{client}_' / 'Interface' / 'AddOns'
+
+        if not addon_dir.is_dir():
             if self.testing:
                 print(f'{Fore.YELLOW}### Creating addon directory for testing at \'{addon_dir}\'.{Fore.RESET}')
-                makedirs(addon_dir)
+                addon_dir.mkdir(addon_dir, parents=True)
             else:
                 raise RuntimeError(f'{Fore.RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
         return addon_dir
@@ -306,4 +308,4 @@ class Addon:
 
 
 if __name__ == '__main__':
-    Updater(testing=True)
+    Updater(testing=False)
