@@ -20,22 +20,17 @@ class Updater:
 
         self.os = pf_system()
 
-        if self.os not in ['Darwin', 'Windows', 'Linux']:
-            raise RuntimeError(f'{Fore.RED}Operating System ({self.os}) not supported.')
-
         self.base_url = 'https://www.curseforge.com'
         self.timeout = 20  # seconds
         self.worker_timed_out = False
 
         self.allowed_release_types = 'RB'  # [R = release, B = beta, A = alpha]
-        if not self.allowed_release_types.upper() in 'RBA':
-            raise RuntimeError(f'{Fore.RED}Release Types must be R, B, A or any combination of them.')
 
         self.cache_dirs = {
             'Windows': pjoin(str(getenv('temp')), 'wow-addon-updates'),
             'Linux': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
             'Darwin': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
-             }
+        }
 
         self.cache_dir = self.cache_dirs[self.os]
 
@@ -44,7 +39,6 @@ class Updater:
                 makedirs(self.cache_dir)
             except PermissionError as e:
                 Fore.RED(f'Do not have permissions to access {self.cache_dir}, error:\n {e}')
-
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
 
