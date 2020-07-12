@@ -80,7 +80,7 @@ class Updater:
         self.size = 0.0
 
         if self.client in clients:
-            self.collect_addons(self.client)
+            self._collect_addons(self.client)
         else:
             if ',' in self.client:
                 client_list = list(set(self.client.split(',')))
@@ -94,8 +94,8 @@ class Updater:
                 client = client.strip()
 
                 if client in clients and len(client) > 0:
-                    self.addon_dir(client)  # early check if client is installed
-                    self.collect_addons(client)
+                    self._addon_dir(client)  # early check if client is installed
+                    self._collect_addons(client)
 
         self.addons_len = len(self.addons)
         if self.addons_len == 0:
@@ -103,9 +103,9 @@ class Updater:
 
         self.cfs = cloudscraper.create_scraper()
 
-        self.main()
+        self._main()
 
-    def collect_addons(self, client):
+    def _collect_addons(self, client):
 
         for name, last_update in self.config.items(client):
             if self.testing:
@@ -119,7 +119,7 @@ class Updater:
 
             self.addons.append(Addon(name=name, client=client, last_update=float(last_update)))
 
-    def find_update(self, addon):
+    def _find_update(self, addon):
         url = f'{self.base_url}/wow/addons/{addon.name}/files/all?filter-game-version={self.filters[addon.client]}'
         r = self.cfs.get(url)
         check_response_status(r)
@@ -128,7 +128,7 @@ class Updater:
         rows = soup.find_all('tr')
 
         with print_lock:
-            self.print_looking_for_update(i=idx.value)
+            self._print_looking_for_update(i=idx.value)
             idx.value += 1
 
         for row in rows[1:]:
@@ -143,7 +143,7 @@ class Updater:
 
                     return addon
 
-    def update_addon(self, addon):
+    def _update_addon(self, addon):
         addon_start = time()
         out_path = pjoin(self.cache_dir, f'{addon.client}_{addon.name}.zip')
         r = self.cfs.get(f'{self.base_url}{addon.file_url}')
@@ -161,12 +161,12 @@ class Updater:
                     f.write(zip_file.content)
                     break
 
-        ZipFile(out_path).extractall(self.addon_dir(addon.client))
+        ZipFile(out_path).extractall(self._addon_dir(addon.client))
         zip_size = getsize(out_path) / 1024 / 1024
 
         return addon, zip_size, addon_start
 
-    def main(self):
+    def _main(self):
         num_workers = cpu_count() * 2
 
         init()
@@ -179,7 +179,7 @@ class Updater:
                   initializer=init_globals,
                   initargs=(shared_idx, global_print_lock)) as p:
 
-            it = p.imap_unordered(self.find_update, self.addons)
+            it = p.imap_unordered(self._find_update, self.addons)
             arr = []
 
             while True:
@@ -197,7 +197,7 @@ class Updater:
         outdated = list(filter(lambda x: x and x.outdated, arr))
 
         eol = '\n\n' if len(outdated) == 0 else f' ({round(time() - start, ndigits=2)}s)\n\n'
-        self.print_looking_for_update(eol=eol)
+        self._print_looking_for_update(eol=eol)
 
         outdated_len = len(outdated)
 
@@ -226,7 +226,7 @@ class Updater:
             # update out-of-date addons
             with Pool(processes=min(num_workers, outdated_len)) as p:
 
-                it = p.imap_unordered(self.update_addon, outdated)
+                it = p.imap_unordered(self._update_addon, outdated)
                 pb = tqdm(total=outdated_len,
                           desc=f' {pad * " "} ',
                           bar_format='{n_fmt}/{total_fmt} |{bar}|{desc}')
@@ -261,7 +261,7 @@ class Updater:
 
         deinit()
 
-    def addon_dir(self, client):
+    def _addon_dir(self, client):
         addon_dir = pjoin(self.game_dir, f'_{client}_', 'Interface', 'AddOns')
         if not isdir(addon_dir):
             if self.testing:
@@ -271,7 +271,7 @@ class Updater:
                 raise RuntimeError(f'{Fore.RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
         return addon_dir
 
-    def print_looking_for_update(self, i=0, eol=' '):
+    def _print_looking_for_update(self, i=0, eol=' '):
 
         anims = {
             'dots': ['   ', '. ', '.. ', '...'],
