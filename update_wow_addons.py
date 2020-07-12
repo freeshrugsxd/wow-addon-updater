@@ -41,9 +41,6 @@ class Updater:
 
         self.config_file = Path(__file__).resolve().parent / 'update_wow_addons.config'
 
-        if not self.config_file.is_file():
-            raise RuntimeError(f'{Fore.RED}No config file detected at \'{self.config_file}\'')
-
         with open(self.config_file, 'r') as f:
             self.config = ConfigParser(allow_no_value=True, interpolation=None)
             self.config.read_file(f)
