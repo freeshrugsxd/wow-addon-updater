@@ -18,8 +18,6 @@ class Updater:
     def __init__(self, testing=False):
         self.testing = testing  # if true, game dir changes and random addons are updated
 
-        self.os = pf_system()
-
         self.base_url = 'https://www.curseforge.com'
         self.timeout = 20  # seconds
         self.worker_timed_out = False
@@ -32,13 +30,13 @@ class Updater:
             'Darwin': pjoin(expanduser('~'), '.cache', 'wow-addon-updates'),
         }
 
-        self.cache_dir = self.cache_dirs[self.os]
+        self.cache_dir = self.cache_dirs[pf_system()]
 
         if not isdir(self.cache_dir):
             try:
                 makedirs(self.cache_dir)
             except PermissionError as e:
-                Fore.RED(f'Do not have permissions to access {self.cache_dir}, error:\n {e}')
+                raise RuntimeError(f'{Fore.RED}Do not have permissions to access {self.cache_dir}, error:\n {e}')
 
         self.config_file = pjoin(dirname(__file__), 'update_wow_addons.config')
 
