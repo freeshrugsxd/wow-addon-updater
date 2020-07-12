@@ -275,7 +275,7 @@ class Updater:
 
         anims = {
             'dots': ['   ', '. ', '.. ', '...'],
-            'braille': ['⠶', '⠦', '⠖', '⠶', '⠲', '⠴']
+            'braille': ['⠶', '⠦', '⠖', '⠲', '⠴']
         }
 
         anim = anims['braille']
@@ -314,4 +314,4 @@ class Addon:
 
 
 if __name__ == '__main__':
-    Updater(testing=False)
+    Updater(testing=True)
