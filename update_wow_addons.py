@@ -99,13 +99,10 @@ class Updater:
 
         for name, last_update in self.config.items(client):
             if self.testing:
-                if randrange(1, 100) <= 25:
-                    last_update = 0.0
-                else:
-                    last_update = time()
+                last_update = 0. if randrange(1, 100) <= 25 else time()
 
             elif not last_update:
-                last_update = 0.0
+                last_update = 0.
 
             self.addons.append(Addon(name=name, client=client, last_update=float(last_update)))
 
