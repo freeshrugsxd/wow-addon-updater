@@ -161,7 +161,7 @@ class Updater:
 
         shared_idx = Value('i', 0)
         global_print_lock = Lock()
-        # check for lates versions
+        # check for latest versions
         with Pool(processes=min(num_workers, self.addons_len),
                   initializer=init_globals,
                   initargs=(shared_idx, global_print_lock)) as p:
