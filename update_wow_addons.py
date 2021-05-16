@@ -254,7 +254,7 @@ class Updater:
         if not addon_dir.is_dir():
             if self.testing:
                 print(f'{Fore.YELLOW}### Creating addon directory for testing at \'{addon_dir}\'.{Fore.RESET}')
-                addon_dir.mkdir(addon_dir, parents=True)
+                addon_dir.mkdir(parents=True)
             else:
                 raise RuntimeError(f'{Fore.RED}{client.capitalize()} addon folder not found at \'{addon_dir}\'.')
         return addon_dir
