@@ -149,7 +149,7 @@ class Updater:
                     break
 
         ZipFile(out_path).extractall(self._addon_dir(addon.client))
-        zip_size = out_path.stat().st_size / 1024 / 1024
+        zip_size = out_path.stat().st_size / 1000000
 
         return addon, zip_size, addon_start
 
